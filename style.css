@@ -1,0 +1,80 @@
+/* General Body Styles */
+body {
+    color: #333;
+    background-color: #f0f2f6; /* Light gray background */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Main App Container */
+.main {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Streamlit Header */
+h1 {
+    color: #2E8B57; /* SeaGreen */
+    text-align: center;
+    padding-bottom: 1rem;
+}
+
+/* Sidebar Styles */
+.st-sidebar {
+    background-color: #f0f2f6;
+}
+
+/* Button Styles */
+.stButton>button {
+    color: #ffffff;
+    background-image: linear-gradient(to right, #FFD700, #DAA520); /* Gold to GoldenRod gradient */
+    border-radius: 25px;
+    padding: 10px 20px;
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.stButton>button:hover {
+    transform: scale(1.05);
+}
+
+/* Tabs Styles */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 24px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 50px;
+    white-space: pre-wrap;
+    background-color: #f0f2f6;
+    border-radius: 4px 4px 0px 0px;
+    gap: 1px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #98FB98; /* PaleGreen */
+}
+
+/* Dropdown/Selectbox Styles */
+.stSelectbox>div>div {
+    background-color: #f0f2f6;
+    border-radius: 5px;
+}
+
+/* Upload File Widget */
+.stFileUploader {
+    padding: 1rem;
+    background-color: #f0f2f6;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px dashed #98FB98; /* PaleGreen */
+}
+
+/* Markdown Styles */
+.stMarkdown {
+    font-size: 1.1rem;
+}
