@@ -1,0 +1,71 @@
+/* Custom fonts and colors */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f0f2f6;
+    color: #333;
+}
+
+/* Base card styling */
+.card {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+/* Image Uploader Card */
+.image-uploader-card {
+    background-color: #fdfdfd;
+}
+
+/* Header styling */
+.app-header {
+    background-image: linear-gradient(45deg, #4CAF50, #82c2a5);
+    padding: 2rem;
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+/* Button styling */
+.stButton button {
+    padding: 1rem 2.5rem;
+    background: linear-gradient(45deg, #FFC107, #f0f08a);
+    color: #333;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.stButton button:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.stButton button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Pills (Tabs) styling */
+.st-emotion-cache-17l4a3l a { /* This class targets the pills container */
+    background: #e0e0e0;
+    border-radius: 50px !important;
+    font-weight: bold;
+}
+
+.st-emotion-cache-17l4a3l a.active {
+    background: linear-gradient(45deg, #4CAF50, #82c2a5);
+    color: white;
+}
+
+.st-emotion-cache-17l4a3l a:hover:not(.active) {
+    background: #cccccc;
+    color: black;
+}

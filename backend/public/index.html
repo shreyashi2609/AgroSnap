@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroSnap - Farmer's AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --pastel-green: #98FB98;
+            --pastel-yellow: #FFFFE0;
+            --soft-green: #90EE90;
+            --soft-yellow: #F0E68C;
+            --accent-green: #3CB371;
+            --accent-yellow: #DAA520;
+            --white: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #2C3E50;
+            --text-secondary: #34495E;
+            --shadow-light: 0 8px 32px rgba(31, 38, 135, 0.15);
+            --shadow-heavy: 0 12px 40px rgba(31, 38, 135, 0.25);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, 
+                #E8F5E8 0%, 
+                #F0F8E8 25%, 
+                #F8FFF0 50%, 
+                #FFFACD 75%, 
+                #F5F5DC 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Floating background elements */
+        .bg-decoration {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0.1;
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .bg-decoration:nth-child(1) {
+            top: 10%;
+            left: 10%;
+            font-size: 8rem;
+            animation-delay: 0s;
+        }
+
+        .bg-decoration:nth-child(2) {
+            top: 20%;
+            right: 15%;
+            font-size: 6rem;
+            animation-delay: -5s;
+        }
+
+        .bg-decoration:nth-child(3) {
+            bottom: 20%;
+            left: 20%;
+            font-size: 7rem;
+            animation-delay: -10s;
+        }
+
+        .bg-decoration:nth-child(4) {
+            bottom: 15%;
+            right: 25%;
+            font-size: 5rem;
+            animation-delay: -15s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(5deg); }
+            50% { transform: translateY(-40px) rotate(0deg); }
+            75% { transform: translateY(-20px) rotate(-5deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Stunning header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-light);
+            animation: slideInDown 1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--accent-green), var(--accent-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        /* Glass card styling */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-light);
+            transition: all 0.4s ease;
+            animation: slideInUp 0.8s ease;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-heavy);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Tab system */
+        .tab-container {
+            display: flex;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 0.8rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-light);
+        }
+
+        .tab-button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 1.2rem 2rem;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--accent-green), var(--soft-green));
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(60, 179, 113, 0.3);
+        }
+
+        .tab-button:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Upload section */
+        .upload-area {
+            border: 3px dashed var(--accent-green);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--pastel-green), var(--pastel-yellow));
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            transform: scale(1.02);
+            border-color: var(--accent-yellow);
+            box-shadow: 0 15px 35px rgba(60, 179, 113, 0.2);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--accent-yellow);
+            background: linear-gradient(135deg, var(--soft-yellow), var(--soft-green));
+            transform: scale(1.02);
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--accent-green);
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        /* Button styling */
+        .btn {
+            background: linear-gradient(135deg, var(--accent-green), var(--soft-green));
+            border: none;
+            padding: 1.2rem 2.5rem;
+            border-radius: 25px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(60, 179, 113, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(60, 179, 113, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--accent-yellow), var(--soft-yellow));
+            box-shadow: 0 8px 25px rgba(218, 165, 32, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 12px 35px rgba(218, 165, 32, 0.4);
+        }
+
+        /* Image preview */
+        .image-preview {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            background: white;
+            padding: 1rem;
+        }
+
+        .image-preview:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+        }
+
+        /* Language selector */
+        .language-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .language-option {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 2px solid transparent;
+            padding: 0.8rem 1.5rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .language-option:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-green);
+        }
+
+        .language-option.active {
+            background: linear-gradient(135deg, var(--accent-green), var(--soft-green));
+            color: white;
+            border-color: var(--accent-green);
+            transform: translateY(-2px);
+        }
+
+        /* Progress bar */
+        .progress-container {
+            margin: 2rem 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-yellow));
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: progressShimmer 1.5s infinite;
+        }
+
+        @keyframes progressShimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 1rem;
+            font-weight: 600;
+            color: var(--accent-green);
+            font-size: 1.1rem;
+        }
+
+        /* Results display */
+        .result-card {
+            background: linear-gradient(135deg, var(--pastel-green), var(--pastel-yellow));
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin: 1.5rem 0;
+            box-shadow: var(--shadow-light);
+            border-left: 5px solid var(--accent-green);
+            animation: slideInLeft 0.8s ease;
+        }
+
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .metric-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            animation: fadeIn 0.8s ease;
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            color: var(--accent-green);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* Animations */
+        @keyframes slideInDown {
+            from { transform: translateY(-100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .tab-button {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .glass-card {
+                padding: 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+            
+            .upload-icon {
+                font-size: 3rem;
+            }
+        }
+
+        /* Scroll to top button */
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, var(--accent-green), var(--soft-green));
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(100px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(60, 179, 113, 0.3);
+            z-index: 1000;
+        }
+
+        .scroll-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scroll-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(60, 179, 113, 0.4);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(60, 179, 113, 0.3);
+            border-top: 5px solid var(--accent-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating background decorations -->
+    <div class="bg-decoration">🌾</div>
+    <div class="bg-decoration">🌱</div>
+    <div class="bg-decoration">🚜</div>
+    <div class="bg-decoration">🌽</div>
+
+    <div class="container">
+        <!-- Stunning Header -->
+        <div class="header">
+            <h1>🌱 AgroSnap</h1>
+            <p>Your AI-powered farming assistant for the future</p>
+            <p class="subtitle">Powered by Google Gemini AI • Real-time Analysis • Multi-language Support</p>
+        </div>
+
+        <!-- Language Selector -->
+        <div class="glass-card">
+            <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--text-primary); font-weight: 700;">
+                🌐 Choose Your Language
+            </h3>
+            <div class="language-selector">
+                <div class="language-option active" data-lang="english">🇺🇸 English</div>
+                <div class="language-option" data-lang="hindi">🇮🇳 हिंदी</div>
+                <div class="language-option" data-lang="marathi">🇮🇳 मराठी</div>
+                <div class="language-option" data-lang="telugu">🇮🇳 తెలుగు</div>
+                <div class="language-option" data-lang="tamil">🇮🇳 தமிழ்</div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-container">
+            <button class="tab-button active" data-tab="upload">
+                <i class="fas fa-upload"></i> Upload & Analyze
+            </button>
+            <button class="tab-button" data-tab="results">
+                <i class="fas fa-chart-line"></i> Analysis Results
+            </button>
+            <button class="tab-button" data-tab="prices">
+                <i class="fas fa-money-bill-wave"></i> Market Prices
+            </button>
+        </div>
+
+        <!-- Upload Tab -->
+        <div class="tab-content active" id="upload-tab">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="glass-card">
+                    <h3 style="color: var(--text-primary); margin-bottom: 2rem; font-weight: 700;">
+                        📸 Upload Your Crop Image
+                    </h3>
+                    
+                    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h4 style="color: var(--text-primary); margin-bottom: 1rem;">
+                            Choose an image file
+                        </h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                            Upload clear images of crops for best analysis results
+                        </p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                            Supported formats: JPG, JPEG, PNG
+                        </p>
+                    </div>
+                    
+                    <input type="file" id="file-input" accept="image/*" style="display: none;">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 2rem 0;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+                            <input type="checkbox" checked> 🔧 Enhance image quality
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+                            <input type="checkbox" checked> 🔬 Detailed analysis
+                        </label>
+                    </div>
+                    
+                    <button class="btn" id="analyze-btn" disabled style="width: 100%;">
+                        <i class="fas fa-magic"></i> Analyze Crop
+                    </button>
+                </div>
+
+                <div class="glass-card">
+                    <h3 style="color: var(--text-primary); margin-bottom: 2rem; font-weight: 700;">
+                        🖼️ Image Preview
+                    </h3>
+                    
+                    <div class="empty-state" id="image-preview-area">
+                        <div class="empty-state-icon">📷</div>
+                        <h4 style="color: var(--text-primary); margin-bottom: 1rem;">
+                            Image preview will appear here
+                        </h4>
+                        <p style="color: var(--text-secondary);">
+                            Upload an image to see preview and details
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div class="tab-content" id="results-tab">
+            <div class="glass-card">
+                <div class="empty-state" id="results-content">
+                    <div class="empty-state-icon">🔬</div>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">
+                        No Analysis Available
+                    </h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Upload an image and run analysis to see detailed results here
+                    </p>
+                    <p style="color: var(--text-secondary); opacity: 0.8;">
+                        Our AI will provide comprehensive crop analysis including disease detection, treatment recommendations, and growing tips
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Prices Tab -->
+        <div class="tab-content" id="prices-tab">
+            <div class="glass-card">
+                <div class="empty-state" id="prices-content">
+                    <div class="empty-state-icon">💰</div>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">
+                        Market Prices Awaiting Analysis
+                    </h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Complete crop analysis first to access real-time market prices
+                    </p>
+                    <div style="background: var(--glass-bg); backdrop-filter: blur(10px); padding: 1.5rem; border-radius: 15px; margin-top: 1.5rem;">
+                        <p style="color: var(--text-secondary); opacity: 0.8;">
+                            📊 Real-time mandi prices • Price trends • Market information
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to top button -->
+    <button class="scroll-top" id="scroll-top">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <!-- Backend Integration Script -->
+    <script>
+        // Translation dictionary
+        const TRANSLATIONS = {
+            "page_title": {
+                "English": "AgroSnap - Farmer's AI Assistant",
+                "Hindi": "एग्रोस्नैप - किसान का एआई सहायक",
+                "Marathi": "अग्रोस्नॅप - शेतकऱ्यांचा एआय सहाय्यक",
+                "Telugu": "అగ్రోస్నాప్ - రైతులకు AI సహాయకుడు",
+                "Tamil": "அக்ரோஸ்னாப் - விவசாயியின் AI உதவியாளர்"
+            },
+            "app_name": {
+                "English": "AgroSnap",
+                "Hindi": "एग्रोस्नैप",
+                "Marathi": "अग्रोस्नॅप",
+                "Telugu": "అగ్రోస్నాప్",
+                "Tamil": "அக்ரோஸ்னாப்"
+            },
+            "app_slogan_1": {
+                "English": "Your AI-powered farming assistant for the future",
+                "Hindi": "भविष्य के लिए आपका एआई-संचालित कृषि सहायक",
+                "Marathi": "भविष्यासाठी तुमचा एआय-शक्ती असलेला कृषी सहाय्यक",
+                "Telugu": "భవిష్యత్తు కోసం మీ AI-ఆధారిత వ్యవసాయ సహాయకుడు",
+                "Tamil": "எதிர்காலத்திற்கான உங்கள் AI-உதவியாளர் விவசாயம்"
+            },
+            "app_slogan_2": {
+                "English": "Powered by Google Gemini AI • Real-time Analysis • Multi-language Support",
+                "Hindi": "गूगल जेमिनी एआई द्वारा संचालित • वास्तविक समय विश्लेषण • बहु-भाषा समर्थन",
+                "Marathi": "गुगल जेमिनी एआय द्वारे समर्थित • वास्तविक-वेळ विश्लेषण • बहु-भाषा समर्थन",
+                "Telugu": "Google Gemini AI ద్వారా ఆధారితం • నిజ-సమయ విశ్లేషణ • బహుళ-భాషా మద్దతు",
+                "Tamil": "Google Gemini AI ஆல் இயக்கப்படுகிறது • நிகழ்நேர பகுப்பாய்வு • பல மொழி ஆதரவு"
+            },
+            "tab_upload": {
+                "English": "Upload & Analyze",
+                "Hindi": "अपलोड करें और विश्लेषण करें",
+                "Marathi": "अपलोड आणि विश्लेषण करा",
+                "Telugu": "అప్‌లోడ్ చేసి విశ్లేషించండి",
+                "Tamil": "பதிவேற்றவும் மற்றும் பகுப்பாய்வு செய்யவும்"
+            },
+            "tab_results": {
+                "English": "Analysis Results",
+                "Hindi": "विश्लेषण परिणाम",
+                "Marathi": "विश्लेषण परिणाम",
+                "Telugu": "విశ్లేషణ ఫలితాలు",
+                "Tamil": "பகுப்பாய்வு முடிவுகள்"
+            },
+            "tab_prices": {
+                "English": "Market Prices",
+                "Hindi": "बाजार भाव",
+                "Marathi": "बाजार भाव",
+                "Telugu": "మార్కెట్ ధరలు",
+                "Tamil": "சந்தை விலைகள்"
+            },
+            "select_language": {
+                "English": "Choose Language",
+                "Hindi": "भाषा चुनें",
+                "Marathi": "भाषा निवडा",
+                "Telugu": "భాషను ఎంచుకోండి",
+                "Tamil": "மொழியைத் தேர்ந்தெடுக்கவும்"
+            },
+            "upload_image": {
+                "English": "Upload Your Crop Image",
+                "Hindi": "अपनी फसल की फोटो अपलोड करें",
+                "Marathi": "तुमच्या पिकाचे चित्र अपलोड करा",
+                "Telugu": "మీ పంట చిత్రాన్ని అప్‌లోడ్ చేయండి",
+                "Tamil": "உங்கள் பயிர் படத்தைப் பதிவேற்றவும்"
+            },
+            "choose_file": {
+                "English": "Choose an image file",
+                "Hindi": "एक छवि फ़ाइल चुनें",
+                "Marathi": "एक इमेज फाइल निवडा",
+                "Telugu": "ఒక చిత్రాన్ని ఎంచుకోండి",
+                "Tamil": "ஒரு பட கோப்பைத் தேர்ந்தெடுக்கவும்"
+            },
+            "uploader_help": {
+                "English": "Upload clear images of crops for best analysis results",
+                "Hindi": "सर्वोत्तम विश्लेषण परिणामों के लिए फसलों की स्पष्ट तस्वीरें अपलोड करें",
+                "Marathi": "उत्तम विश्लेषणासाठी पिकाची स्पष्ट चित्रे अपलोड करा",
+                "Telugu": "ఉత్తమ విశ్లేషణ ఫలితాల కోసం స్పష్టమైన పంట చిత్రాలను అప్‌లోడ్ చేయండి",
+                "Tamil": "சிறந்த பகுப்பாய்வு முடிவுகளுக்கு பயிர்களின் தெளிவான படங்களை பதிவேற்றவும்"
+            },
+            "processing_options": {
+                "English": "Processing Options",
+                "Hindi": "प्रसंस्करण विकल्प",
+                "Marathi": "प्रक्रिया पर्याय",
+                "Telugu": "ప్రాసెసింగ్ ఎంపికలు",
+                "Tamil": "செயலாக்க விருப்பங்கள்"
+            },
+            "enhance_image": {
+                "English": "Enhance image quality",
+                "Hindi": "छवि गुणवत्ता बढ़ाएँ",
+                "Marathi": "इमेजची गुणवत्ता वाढवा",
+                "Telugu": "చిత్ర నాణ్యతను మెరుగుపరచండి",
+                "Tamil": "படத்தின் தரத்தை மேம்படுத்தவும்"
+            },
+            "detailed_analysis": {
+                "English": "Detailed analysis",
+                "Hindi": "विस्तृत विश्लेषण",
+                "Marathi": "सखोल विश्लेषण",
+                "Telugu": "వివరణాత్మక విశ్లేషణ",
+                "Tamil": "விரிவான பகுப்பாய்வு"
+            },
+            "analyze_button": {
+                "English": "Analyze Crop",
+                "Hindi": "फसल का विश्लेषण करें",
+                "Marathi": "पिकाचे विश्लेषण करा",
+                "Telugu": "పంటను విశ్లేషించండి",
+                "Tamil": "பயிரைப் பகுப்பாய்வு செய்யவும்"
+            },
+            "analyze_help": {
+                "English": "Click to start AI-powered crop analysis",
+                "Hindi": "एआई-संचालित फसल विश्लेषण शुरू करने के लिए क्लिक करें",
+                "Marathi": "एआय-चालित पीक विश्लेषण सुरू करण्यासाठी क्लिक करा",
+                "Telugu": "AI-ఆధారిత పంట విశ్లేషణను ప్రారంభించడానికి క్లిక్ చేయండి",
+                "Tamil": "AI-உதவியுடன் பயிர் பகுப்பாய்வைத் தொடங்க கிளிக் செய்யவும்"
+            },
+            "upload_to_begin": {
+                "English": "Please upload an image to begin analysis",
+                "Hindi": "कृपया विश्लेषण शुरू करने के लिए एक छवि अपलोड करें",
+                "Marathi": "कृपया विश्लेषण सुरू करण्यासाठी एक इमेज अपलोड करा",
+                "Telugu": "విశ్లేషణ ప్రారంభించడానికి దయచేసి ఒక చిత్రాన్ని అప్‌లోడ్ చేయండి",
+                "Tamil": "பகுப்பாய்வைத் தொடங்க ஒரு படத்தைப் பதிவேற்றவும்"
+            },
+            "image_preview": {
+                "English": "Image Preview",
+                "Hindi": "छवि पूर्वावलोकन",
+                "Marathi": "इमेजचे पूर्वावलोकन",
+                "Telugu": "చిత్రం ప్రివ్యూ",
+                "Tamil": "பட முன்னோட்டம்"
+            },
+            "image_info_dim": {
+                "English": "Dimensions:",
+                "Hindi": "आयाम:",
+                "Marathi": "परिमाणे:",
+                "Telugu": "కొలతలు:",
+                "Tamil": "பரிமாணங்கள்:"
+            },
+            "image_info_format": {
+                "English": "Format:",
+                "Hindi": "स्वरूप:",
+                "Marathi": "स्वरूप:",
+                "Telugu": "ఫార్మాట్:",
+                "Tamil": "வடிவம்:"
+            },
+            "image_info_size": {
+                "English": "Size:",
+                "Hindi": "आकार:",
+                "Marathi": "आकार:",
+                "Telugu": "పరిమాణం:",
+                "Tamil": "அளவு:"
+                       },
+            "preview_placeholder_1": {
+                "English": "Image preview will appear here",
+                "Hindi": "छवि पूर्वावलोकन यहाँ दिखाई देगा",
+                "Marathi": "इमेजचे पूर्वावलोकन येथे दिसेल",
+                "Telugu": "చిత్ర ప్రివ్యూ ఇక్కడ కనిపిస్తుంది",
+                "Tamil": "பட முன்னோட்டம் இங்கே தோன்றும்"
+            },
+            "preview_placeholder_2": {
+                "English": "Upload an image to see preview and details",
+                "Hindi": "पूर्वावलोकन और विवरण देखने के लिए एक छवि अपलोड करें",
+                "Marathi": "पूर्वावलोकन आणि तपशील पाहण्यासाठी एक इमेज अपलोड करा",
+                "Telugu": "ప్రివ్యూ మరియు వివరాలను చూడటానికి ఒక చిత్రాన్ని అప్‌లోడ్ చేయండి",
+                "Tamil": "முன்னோட்டத்தைப் பார்க்க ஒரு படத்தைப் பதிவேற்றவும்"
+            },
+            "analysis_progress": {
+                "English": "AI Analysis in Progress",
+                "Hindi": "एआई विश्लेषण जारी है",
+                "Marathi": "एआय विश्लेषण सुरू आहे",
+                "Telugu": "AI విశ్లేషణ పురోగతిలో ఉంది",
+                "Tamil": "AI பகுப்பாய்வு நடந்து கொண்டிருக்கிறது"
+            },
+            "step_1": {
+                "English": "Processing image...",
+                "Hindi": "छवि संसाधित हो रही है...",
+                "Marathi": "इमेजवर प्रक्रिया होत आहे...",
+                "Telugu": "చిత్రాన్ని ప్రాసెస్ చేస్తోంది...",
+                "Tamil": "படம் செயலாக்கப்படுகிறது..."
+            },
+            "step_2": {
+                "English": "Initializing AI models...",
+                "Hindi": "एआई मॉडल शुरू हो रहे हैं...",
+                "Marathi": "एआय मॉडेल सुरू होत आहेत...",
+                "Telugu": "AI మోడళ్లను ప్రారంభిస్తోంది...",
+                "Tamil": "AI மாதிரிகள் துவக்கப்படுகிறது..."
+            },
+            "step_3": {
+                "English": "Analyzing crop characteristics...",
+                "Hindi": "फसल विशेषताओं का विश्लेषण...",
+                "Marathi": "पिकांच्या गुणधर्मांचे विश्लेषण करत आहे...",
+                "Telugu": "పంట లక్షణాలను విశ్లేషిస్తోంది...",
+                "Tamil": "பயிர் குணாதிசயங்களைப் பகுப்பாய்வு செய்கிறது..."
+            },
+            "step_4": {
+                "English": "Detecting diseases/pests...",
+                "Hindi": "रोग/कीटों का पता लगाना...",
+                "Marathi": "रोग/कीटकांचा शोध घेत आहे...",
+                "Telugu": "వ్యాధులు/తెగుళ్లను గుర్తిస్తోంది...",
+                "Tamil": "நோய்கள்/பூச்சிகளைக் கண்டறிதல்..."
+            },
+            "step_5": {
+                "English": "Generating recommendations...",
+                "Hindi": "सिफारिशें तैयार की जा रही हैं...",
+                "Marathi": "शिफारशी तयार करत आहे...",
+                "Telugu": "సिफార్సులను ఉత్పత్తి చేస్తోంది...",
+                "Tamil": "பரிந்துரைகளை உருவாக்குகிறது..."
+            },
+            "step_6": {
+                "English": "Finalizing analysis...",
+                "Hindi": "विश्लेषण अंतिम रूप दिया जा रहा है...",
+                "Marathi": "विश्लेषण अंतिम टप्प्यात आहे...",
+                "Telugu": "విశ్లేషణను ఖరారు చేస్తోంది...",
+                "Tamil": "பகுப்பாய்வை இறுதி செய்கிறது..."
+            },
+            "analysis_complete": {
+                "English": "Analysis Complete!",
+                "Hindi": "विश्लेषण पूरा हुआ!",
+                "Marathi": "विश्लेषण पूर्ण झाले!",
+                "Telugu": "విశ్లేషణ పూర్తయింది!",
+                "Tamil": "பகுப்பாய்வு நிறைவு!"
+            },
+            "success_message": {
+                "English": "Analysis completed successfully! Check the 'Analysis Results' tab for detailed insights.",
+                "Hindi": "विश्लेषण सफलतापूर्वक पूरा हो गया है! विस्तृत जानकारी के लिए 'विश्लेषण परिणाम' टैब देखें।",
+                "Marathi": "विश्लेषण यशस्वीरित्या पूर्ण झाले आहे! सखोल माहितीसाठी 'विश्लेषण परिणाम' टॅब तपासा.",
+                "Telugu": "విశ్లేషణ విజయవంతంగా పూర్తయింది! వివరణాత్మక అంతర్దృష్టుల కోసం 'విశ్లేషణ ఫలితాలు' ట్యాబ్‌ను తనిఖీ చేయండి.",
+                "Tamil": "பகுப்பாய்வு வெற்றிகரமாக முடிந்தது! விரிவான நுண்ணறிவுகளுக்கு 'பகுப்பாய்வு முடிவுகள்' தாவலை சரிபார்க்கவும்."
+            },
+            "analysis_failed": {
+                "English": "Analysis failed: {error}",
+                "Hindi": "विश्लेषण विफल: {error}",
+                "Marathi": "विश्लेषण अयशस्वी झाले: {error}",
+                "Telugu": "విశ్లేషణ విఫలమైంది: {error}",
+                "Tamil": "பகுப்பாய்வு தோல்வியடைந்தது: {error}"
+            },
+            "translating_text": {
+                "English": "Translating to {language}...",
+                "Hindi": "हिंदी में अनुवाद हो रहा है...",
+                "Marathi": "मराठीत अनुवाद होत आहे...",
+                "Telugu": "తెలుగులోకి అనువదిస్తోంది...",
+                "Tamil": "தமிழுக்கு மொழிபெயர்க்கப்படுகிறது..."
+            },
+            "selected_crop_image": {
+                "English": "Selected crop image",
+                "Hindi": "चयनित फसल की छवि",
+                "Marathi": "निवडलेले पिकाचे चित्र",
+                "Telugu": "ఎంచుకున్న పంట చిత్రం",
+                "Tamil": "தேர்ந்தெடுக்கப்பட்ட பயிர் படம்"
+            },
+            "location_details": {
+                "English": "Location Details:",
+                "Hindi": "स्थान विवरण:",
+                "Marathi": "स्थान तपशील:",
+                "Telugu": "స్థాన వివరాలు:",
+                "Tamil": "இருப்பிட விவரங்கள்:"
+            },
+            "commodity_info": {
+                "English": "Commodity Info:",
+                "Hindi": "वस्तु जानकारी:",
+                "Marathi": "वस्तू माहिती:",
+                "Telugu": "వస్తువు సమాచారం:",
+                "Tamil": "பொருள் தகவல்:"
+            },
+            "price_information": {
+                "English": "Price Information:",
+                "Hindi": "मूल्य जानकारी:",
+                "Marathi": "किंमत माहिती:",
+                "Telugu": "ధర సమాచారం:",
+                "Tamil": "விலை தகவல்:"
+            },
+            "market_data": {
+                "English": "Market Data:",
+                "Hindi": "बाजार डेटा:",
+                "Marathi": "बाजार डेटा:",
+                "Telugu": "మార్కెట్ డేటా:",
+                "Tamil": "சந்தை தரவு:"
+            },
+            "state": {
+                "English": "State",
+                "Hindi": "राज्य",
+                "Marathi": "राज्य",
+                "Telugu": "రాష్ట్రం",
+                "Tamil": "மாநிலம்"
+            },
+            "district": {
+                "English": "District",
+                "Hindi": "जिला",
+                "Marathi": "जिल्हा",
+                "Telugu": "జిల్లా",
+                "Tamil": "மாவட்டம்"
+            },
+            "market": {
+                "English": "Market",
+                "Hindi": "बाजार",
+                "Marathi": "बाजार",
+                "Telugu": "మార్కెట్",
+                "Tamil": "சந்தை"
+            },
+            "commodity": {
+                "English": "Commodity",
+                "Hindi": "वस्तु",
+                "Marathi": "वस्तू",
+                "Telugu": "వస్తువు",
+                "Tamil": "பொருள்"
+            },
+            "variety": {
+                "English": "Variety",
+                "Hindi": "किस्म",
+                "Marathi": "जात",
+                "Telugu": "రకం",
+                "Tamil": "வகை"
+            },
+            "modal_price": {
+                "English": "Modal Price",
+                "Hindi": "मॉडल मूल्य",
+                "Marathi": "मॉडल किंमत",
+                "Telugu": "మోడల్ ధర",
+                "Tamil": "மாடல் விலை"
+            },
+            "min_price": {
+                "English": "Min Price",
+                "Hindi": "न्यूनतम मूल्य",
+                "Marathi": "किमान किंमत",
+                "Telugu": "కనిష్ట ధర",
+                "Tamil": "குறைந்தபட்ச விலை"
+            },
+            "max_price": {
+                "English": "Max Price",
+                "Hindi": "अधिकतम मूल्य",
+                "Marathi": "कमाल किंमत",
+                "Telugu": "గరిష్ట ధర",
+                "Tamil": "அதிகபட்ச விலை"
+            },
+            "arrival_date": {
+                "English": "Arrival Date",
+                "Hindi": "आगमन तिथि",
+                "Marathi": "आगमन तारीख",
+                "Telugu": "రాక తేదీ",
+                "Tamil": "வருகை தேதி"
+            },
+            "analysis_results_title": {
+                "English": "Analysis Results",
+                "Hindi": "विश्लेषण परिणाम",
+                "Marathi": "विश्लेषण परिणाम",
+                "Telugu": "విశ్లేషణ ఫలితాలు",
+                "Tamil": "பகுப்பாய்வு முடிவுகள்"
+            },
+            "quick_actions": {
+                "English": "Quick Actions",
+                "Hindi": "त्वरित कार्य",
+                "Marathi": "जलद कृती",
+                "Telugu": "త్వరిత చర్యలు",
+                "Tamil": "விரைவான செயல்கள்"
+            },
+            "download_report": {
+                "English": "Download Report",
+                "Hindi": "रिपोर्ट डाउनलोड करें",
+                "Marathi": "अहवाल डाउनलोड करा",
+                "Telugu": "నివేదికను డౌన్‌లోడ్ చేయండి",
+                "Tamil": "அறிக்கையைப் பதிவிறக்கவும்"
+            },
+            "download_help": {
+                "English": "Download analysis as PDF",
+                "Hindi": "विश्लेषण को पीडीएफ के रूप में डाउनलोड करें",
+                "Marathi": "विश्लेषण पीडीएफ म्हणून डाउनलोड करा",
+                "Telugu": "విశ్లేషణను PDFగా డౌన్‌లోడ్ చేయండి",
+                "Tamil": "பகுப்பாய்வை PDF ஆக பதிவிறக்கவும்"
+            },
+            "download_success": {
+                "English": "Report downloaded successfully!",
+                "Hindi": "रिपोर्ट सफलतापूर्वक डाउनलोड हो गई है!",
+                "Marathi": "अहवाल यशस्वीरित्या डाउनलोड झाला आहे!",
+                "Telugu": "నివేదిక విజయవంతంగా డౌन్‌లోడ్ చేయబడింది!",
+                "Tamil": "அறிக்கை வெற்றிகரமாக பதிவிறக்கம் செய்யப்பட்டது!"
+            },
+            "re_analyze": {
+                "English": "Re-analyze",
+                "Hindi": "पुनः विश्लेषण करें",
+                "Marathi": "पुन्हा विश्लेषण करा",
+                "Telugu": "మళ్లీ విశ్లేషించండి",
+                "Tamil": "மீண்டும் பகுப்பாய்வு செய்யவும்"
+            },
+            "re_analyze_help": {
+                "English": "Run analysis again",
+                "Hindi": "विश्लेषण फिर से चलाएँ",
+                "Marathi": "विश्लेषण पुन्हा सुरू करा",
+                "Telugu": "విశ్లేషణను మళ్లీ అమలు చేయండి",
+                "Tamil": "பகுப்பாய்வை மீண்டும் இயக்கவும்"
+            },
+            "save_to_history": {
+                "English": "Save to History",
+                "Hindi": "इतिहास में सहेजें",
+                "Marathi": "इतिहासात सेव्ह करा",
+                "Telugu": "చరిత్రలో సేవ్ చేయండి",
+                "Tamil": "வரலாற்றில் சேமிக்கவும்"
+            },
+            "save_success": {
+                "English": "Analysis saved to history!",
+                "Hindi": "विश्लेषण इतिहास में सहेजा गया!",
+                "Marathi": "विश्लेषण इतिहासात सेव्ह झाले!",
+                "Telugu": "విశ్లేషణ చరిత్రలో సేవ్ చేయబడింది!",
+                "Tamil": "பகுப்பாய்வு வரலாற்றில் சேமிக்கப்பட்டது!"
+            },
+            "no_analysis_title": {
+                "English": "No Analysis Available",
+                "Hindi": "कोई विश्लेषण उपलब्ध नहीं है",
+                "Marathi": "कोणतेही विश्लेषण उपलब्ध नाही",
+                "Telugu": "విశ్లేషణ అందుబాటులో లేదు",
+                "Tamil": "பகுப்பாய்வு எதுவும் கிடைக்கவில்லை"
+            },
+            "no_analysis_text_1": {
+                "English": "Upload an image and run analysis to see detailed results here",
+                "Hindi": "यहां विस्तृत परिणाम देखने के लिए एक छवि अपलोड करें और विश्लेषण चलाएं",
+                "Marathi": "सविस्तर परिणाम पाहण्यासाठी एक इमेज अपलोड करा आणि विश्लेषण सुरू करा",
+                "Telugu": "వివరణాత్మక ఫలితాలను చూడటానికి ఒక చిత్రాన్ని అప్‌లోడ్ చేసి విశ్లేషణను అమలు చేయండి",
+                "Tamil": "விரிவான முடிவுகளைப் பார்க்க ஒரு படத்தைப் பதிவேற்றி பகுப்பாய்வை இயக்கவும்"
+            },
+            "no_analysis_text_2": {
+                "English": "Our AI will provide comprehensive crop analysis including disease detection, treatment recommendations, and growing tips",
+                "Hindi": "हमारा एआई रोग का पता लगाने, उपचार की सिफारिशें और खेती के सुझावों सहित व्यापक फसल विश्लेषण प्रदान करेगा",
+                "Marathi": "आमचा एआय रोग ओळखणे, उपचारांच्या शिफारशी आणि वाढीच्या टिप्ससह पिकाचे सखोल विश्लेषण देईल",
+                "Telugu": "మా AI వ్యాధి నిర్ధారణ, చికిత్స సిఫార్సులు మరియు సాగు చిట్కాలతో సహా సమగ్ర పంట విశ్లేషణను అందిస్తుంది",
+                "Tamil": "எங்கள் AI நோய் கண்டறிதல், சிகிச்சை பரிந்துரைகள் மற்றும் வளர்ப்பு குறிப்புகள் உட்பட விரிவான பயிர் பகுப்பாய்வை வழங்கும்"
+            },
+            "market_prices_title": {
+                "English": "Real-time Market Prices",
+                "Hindi": "वास्तविक समय के बाजार भाव",
+                "Marathi": "वास्तविक-वेळ बाजार भाव",
+                "Telugu": "నిజ-సమయ మార్కెట్ ధరలు",
+                "Tamil": "நிகழ்நேர சந்தை விலைகள்"
+            },
+            "market_data_for": {
+                "English": "Market data for: {crop}",
+                "Hindi": "इसके लिए बाजार डेटा: {crop}",
+                "Marathi": "या पिकासाठी बाजार डेटा: {crop}",
+                "Telugu": "మార్కెట్ డేటా: {crop}",
+                "Tamil": "சந்தை தரவு: {crop}"
+            },
+            "fetching_prices": {
+                "English": "Fetching real-time market prices...",
+                "Hindi": "वास्तविक समय के बाजार भाव लाए जा रहे हैं...",
+                "Marathi": "वास्तविक-वेळ बाजार भाव आणत आहे...",
+                "Telugu": "నిజ-సమయ మార్కెట్ ధరలను తెస్తోంది...",
+                "Tamil": "நிகழ்நேர சந்தை விலைகள் பெறப்படுகிறது..."
+            },
+            "market_overview": {
+                "English": "Market Overview",
+                "Hindi": "बाजार का अवलोकन",
+                "Marathi": "बाजारचा आढावा",
+                "Telugu": "మార్కెట్ అవలోకనం",
+                "Tamil": "சந்தை மேலோட்டம்"
+            },
+            "avg_price": {
+                "English": "Average Price",
+                "Hindi": "औसत मूल्य",
+                "Marathi": "सरासरी किंमत",
+                "Telugu": "సగటు ధర",
+                "Tamil": "சராசரி விலை"
+            },
+            "avg_price_help": {
+                "English": "Average price across all markets",
+                "Hindi": "सभी बाजारों में औसत मूल्य",
+                "Marathi": "सर्व बाजारांमधील सरासरी किंमत",
+                "Telugu": "అన్ని మార్కెట్లలో సగటు ధర",
+                "Tamil": "அனைத்து சந்தைகளிலும் சராசரி விலை"
+            },
+            "price_chart_title": {
+                "English": "Price Comparison Chart",
+                "Hindi": "मूल्य तुलना चार्ट",
+                "Marathi": "किंमत तुलना चार्ट",
+                "Telugu": "ధరల పోలిక చార్ట్",
+                "Tamil": "விலை ஒப்பீட்டு விளக்கப்படம்"
+            },
+            "market_info_title": {
+                "English": "Market Information",
+                "Hindi": "बाजार की जानकारी",
+                "Marathi": "बाजार माहिती",
+                "Telugu": "మార్కెట్ సమాచారం",
+                "Tamil": "சந்தை தகவல்"
+            },
+            "no_market_data": {
+                "English": "No market data available for \"{crop_name}\"",
+                "Hindi": "\"{crop_name}\" के लिए कोई बाजार डेटा उपलब्ध नहीं है",
+                "Marathi": "\"{crop_name}\" साठी कोणताही बाजार डेटा उपलब्ध नाही",
+                "Telugu": "\"{crop_name}\" కోసం మార్కెట్ డేటా అందుబాటులో లేదు",
+                "Tamil": "\"{crop_name}\" க்கான சந்தை தரவு எதுவும் கிடைக்கவில்லை"
+            },
+            "api_unavailable_1": {
+                "English": "Market prices might not be available for this specific crop or the API might be temporarily unavailable.",
+                "Hindi": "इस विशेष फसल के लिए बाजार मूल्य उपलब्ध नहीं हो सकते हैं या एपीआई अस्थायी रूप से अनुपलब्ध हो सकता है।",
+                "Marathi": "या विशिष्ट पिकासाठी बाजार भाव उपलब्ध नसतील किंवा एपीआय तात्पुरते अनुपलब्ध असू शकते.",
+                "Telugu": "ఈ నిర్దిష్ట పంటకు మార్కెట్ ధరలు అందుబాటులో ఉండకపోవచ్చు లేదా API తాత్కాలికంగా అందుబాటులో ఉండకపోవచ్చు.",
+                "Tamil": "இந்த குறிப்பிட்ட பயிருக்கு சந்தை விலைகள் கிடைக்காமல் போகலாம் அல்லது API தற்காலிகமாக கிடைக்காமல் போகலாம்."
+            },
+            "api_unavailable_2": {
+                "English": "Try again later or check with local agricultural markets.",
+                "Hindi": "बाद में फिर से प्रयास करें या स्थानीय कृषि बाजारों से जांच करें।",
+                "Marathi": "नंतर पुन्हा प्रयत्न करा किंवा स्थानिक कृषी बाजारपेठांशी संपर्क साधा.",
+                "Telugu": "తరువాత మళ్ళీ ప్రయత్నించండి లేదా స్థానిక వ్యవసాయ మార్కెట్లను సంప్రదించండి.",
+                "Tamil": "பின்னர் மீண்டும் முயற்சிக்கவும் அல்லது உள்ளூர் வேளாண் சந்தைகளை சரிபார்க்கவும்."
+            },
+            "error_fetching_market_data": {
+                "English": "Error fetching market data: {error}",
+                "Hindi": "बाजार डेटा लाने में त्रुटि: {error}",
+                "Marathi": "बाजार डेटा आणताना त्रुटी: {error}",
+                "Telugu": "మార్కెట్ డేటాను పొందుతున్నప్పుడు లోపం: {error}",
+                "Tamil": "சந்தை தரவை எடுப்பதில் பிழை: {error}"
+            },
+            "temp_unavailable_title": {
+                "English": "Market Data Temporarily Unavailable",
+                "Hindi": "बाजार डेटा अस्थायी रूप से अनुपलब्ध",
+                "Marathi": "बाजार डेटा तात्पुरता अनुपलब्ध आहे",
+                "Telugu": "మార్కెట్ డేటా తాత్కాలికంగా అందుబాటులో లేదు",
+                "Tamil": "சந்தை தரவு தற்காலிகமாக கிடைக்கவில்",            
+            },
+            "temp_unavailable_text_1": {
+                "English": "We're experiencing technical difficulties accessing market data.",
+                "Hindi": "हमें बाजार डेटा तक पहुँचने में तकनीकी कठिनाई हो रही है।",
+                "Marathi": "आम्हाला बाजार डेटा ऍक्सेस करताना तांत्रिक अडचणी येत आहेत.",
+                "Telugu": "మార్కెట్ డేటాను యాక్సెస్ చేయడంలో మాకు సాంకేతిక సమస్యలు ఎదురవుతున్నాయి.",
+                "Tamil": "சந்தை தரவை அணுகுவதில் தொழில்நுட்ப சிக்கல்கள் உள்ளன."
+            },
+            "temp_unavailable_text_2": {
+                "English": "Please try again in a few moments.",
+                "Hindi": "कृपया कुछ देर बाद फिर से प्रयास करें।",
+                "Marathi": "कृपया काही क्षणात पुन्हा प्रयत्न करा.",
+                "Telugu": "దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.",
+                "Tamil": "தயவுசெய்து சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்."
+            },
+            "prices_awaiting_analysis_title": {
+                "English": "Market Prices Awaiting Analysis",
+                "Hindi": "विश्लेषण की प्रतीक्षा में बाजार भाव",
+                "Marathi": "विश्लेषण प्रतीक्षेत बाजार भाव",
+                "Telugu": "విశ్లేషణ కోసం వేచి ఉన్న మార్కెట్ ధరలు",
+                "Tamil": "பகுப்பாய்வுக்காகக் காத்திருக்கும் சந்தை விலைகள்"
+            },
+            "prices_awaiting_analysis_text_1": {
+                "English": "Complete crop analysis first to access real-time market prices",
+                "Hindi": "वास्तविक समय के बाजार भाव तक पहुँचने के लिए पहले फसल का विश्लेषण पूरा करें",
+                "Marathi": "वास्तविक-वेळ बाजार भाव पाहण्यासाठी प्रथम पिकाचे विश्लेषण पूर्ण करा",
+                "Telugu": "నిజ-సమయ మార్కెట్ ధరలను యాక్సెస్ చేయడానికి మొదట పంట విశ్లేషణను పూర్తి చేయండి",
+                "Tamil": "நிகழ்நேர சந்தை விலைகளை அணுக முதலில் பயிர் பகுப்பாய்வை முடிக்கவும்"
+            },
+            "prices_awaiting_analysis_text_2": {
+                "English": "Real-time mandi prices • Price trends • Market information",
+                "Hindi": "वास्तविक समय के मंडी भाव • मूल्य के रुझान • बाजार की जानकारी",
+                "Marathi": "वास्तविक-वेळ बाजार भाव • किंमत कल • बाजार माहिती",
+                "Telugu": "నిజ-సమయ మార్కెట్ ధరలు • ధరల పోకడలు • మార్కెట్ సమాచారం",
+                "Tamil": "நிகழ்நேர சந்தை விலைகள் • விலை போக்குகள் • சந்தை தகவல்"
+            }
+        };
+
+        // Application state
+        const appState = {
+            language: 'English',
+            uploadedImage: null,
+            analysisResult: null,
+            marketData: null,
+            isAnalyzing: false,
+            isTranslating: false
+        };
+
+        // Translation function
+        function translateText(textKey, params = {}) {
+            let text = TRANSLATIONS[textKey]?.[appState.language] || textKey;
+            
+            // Replace parameters in the text
+            Object.keys(params).forEach(key => {
+                text = text.replace(`{${key}}`, params[key]);
+            });
+            
+            return text;
+        }
+
+        // Update UI based on language
+        function updateUILanguage() {
+            // Update header
+            document.querySelector('.header h1').textContent = `🌱 ${translateText('app_name')}`;
+            document.querySelector('.header p').textContent = translateText('app_slogan_1');
+            document.querySelector('.header .subtitle').textContent = translateText('app_slogan_2');
+            
+            // Update tab buttons
+            document.querySelector('[data-tab="upload"]').innerHTML = `<i class="fas fa-upload"></i> ${translateText('tab_upload')}`;
+            document.querySelector('[data-tab="results"]').innerHTML = `<i class="fas fa-chart-line"></i> ${translateText('tab_results')}`;
+            document.querySelector('[data-tab="prices"]').innerHTML = `<i class="fas fa-money-bill-wave"></i> ${translateText('tab_prices')}`;
+            
+            // Update upload section
+            document.querySelector('#upload-tab h3').textContent = `📸 ${translateText('upload_image')}`;
+            document.querySelector('.upload-area h4').textContent = translateText('choose_file');
+            document.querySelector('.upload-area p:nth-child(3)').textContent = translateText('uploader_help');
+            
+            // Update options
+            document.querySelectorAll('#upload-tab label')[0].innerHTML = `<input type="checkbox" checked> 🔧 ${translateText('enhance_image')}`;
+            document.querySelectorAll('#upload-tab label')[1].innerHTML = `<input type="checkbox" checked> 🔬 ${translateText('detailed_analysis')}`;
+            
+            // Update analyze button
+            document.querySelector('#analyze-btn').innerHTML = `<i class="fas fa-magic"></i> ${translateText('analyze_button')}`;
+            
+            // Update preview section
+            document.querySelector('#image-preview-area h4').textContent = translateText('preview_placeholder_1');
+            document.querySelector('#image-preview-area p').textContent = translateText('preview_placeholder_2');
+            
+            // Update results section
+            if (!appState.analysisResult) {
+                document.querySelector('#results-content h3').textContent = translateText('no_analysis_title');
+                document.querySelector('#results-content p:nth-child(3)').textContent = translateText('no_analysis_text_1');
+                document.querySelector('#results-content p:nth-child(4)').textContent = translateText('no_analysis_text_2');
+            }
+            
+            // Update prices section
+            if (!appState.analysisResult) {
+                document.querySelector('#prices-content h3').textContent = translateText('prices_awaiting_analysis_title');
+                document.querySelector('#prices-content p:nth-child(3)').textContent = translateText('prices_awaiting_analysis_text_1');
+                document.querySelector('#prices-content p:nth-child(4)').textContent = translateText('prices_awaiting_analysis_text_2');
+            }
+        }
+
+        // Tab functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                
+                // Remove active class from all tabs
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                button.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+
+        // Language selector
+        const languageOptions = document.querySelectorAll('.language-option');
+        languageOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                languageOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                
+                // Update app language
+                const langMap = {
+                    'english': 'English',
+                    'hindi': 'Hindi',
+                    'marathi': 'Marathi',
+                    'telugu': 'Telugu',
+                    'tamil': 'Tamil'
+                };
+                
+                appState.language = langMap[option.getAttribute('data-lang')];
+                updateUILanguage();
+            });
+        });
+
+        // File upload handling
+        const fileInput = document.getElementById('file-input');
+        const imagePreviewArea = document.getElementById('image-preview-area');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const uploadArea = document.querySelector('.upload-area');
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        function handleFileUpload(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    
+                    img.onload = function() {
+                        imagePreviewArea.innerHTML = `
+                            <div class="image-preview">
+                                <img src="${e.target.result}" alt="${translateText('selected_crop_image')}">
+                            </div>
+                            <div style="background: var(--glass-bg); padding: 1.5rem; border-radius: 15px; margin-top: 1rem; backdrop-filter: blur(10px);">
+                                <p style="color: var(--text-primary); margin-bottom: 0.5rem;"><strong>📏 ${translateText('image_info_dim')}</strong> ${img.width} x ${img.height}</p>
+                                <p style="color: var(--text-primary); margin-bottom: 0.5rem;"><strong>📁 ${translateText('image_info_format')}</strong> ${file.type}</p>
+                                <p style="color: var(--text-primary);"><strong>📊 ${translateText('image_info_size')}</strong> ${(file.size / 1024).toFixed(1)} KB</p>
+                            </div>
+                        `;
+                        analyzeBtn.disabled = false;
+                        
+                        // Store the uploaded image
+                        appState.uploadedImage = file;
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Analyze button functionality
+        analyzeBtn.addEventListener('click', () => {
+            if (!analyzeBtn.disabled && appState.uploadedImage) {
+                startAnalysis();
+            }
+        });
+
+        function startAnalysis() {
+            appState.isAnalyzing = true;
+            
+            // Show analysis progress
+            const uploadTab = document.getElementById('upload-tab');
+            const progressHTML = `
+                <div class="glass-card" style="margin-top: 2rem;">
+                    <h3 style="color: var(--text-primary); margin-bottom: 2rem; text-align: center; font-weight: 700;">
+                        🔄 ${translateText('analysis_progress')}
+                    </h3>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text">${translateText('step_1')} 0%</div>
+                    </div>
+                    <div class="spinner"></div>
+                </div>
+            `;
+            
+            uploadTab.insertAdjacentHTML('beforeend', progressHTML);
+
+            // Simulate analysis progress
+            const steps = [
+                translateText('step_1'),
+                translateText('step_2'),
+                translateText('step_3'),
+                translateText('step_4'),
+                translateText('step_5'),
+                translateText('step_6')
+            ];
+
+            let currentStep = 0;
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(progressInterval);
+                    completeAnalysis();
+                }
+                
+                // Update step text
+                if (progress > currentStep * 16.67 && currentStep < steps.length) {
+                    document.getElementById('progress-text').textContent = `${steps[currentStep]} ${Math.round(progress)}%`;
+                    currentStep++;
+                }
+                
+                document.getElementById('progress-fill').style.width = `${progress}%`;
+            }, 200);
+        }
+
+        function completeAnalysis() {
+    setTimeout(() => {
+        // Call actual Gemini API (REPLACED the simulateGeminiAnalysis call)
+        analyzeWithGemini().then(result => {
+            appState.analysisResult = result;
+            appState.isAnalyzing = false;
+            
+            // Update results tab
+            updateResultsTab();
+            
+            // Update prices tab
+            updatePricesTab();
+            
+            // Switch to results tab
+            document.querySelector('[data-tab="results"]').click();
+            
+            // Remove progress section
+            const progressSection = document.querySelector('.glass-card:last-child');
+            if (progressSection && progressSection.innerHTML.includes('AI Analysis in Progress')) {
+                progressSection.remove();
+            }
+        }).catch(error => {
+            console.error('Analysis failed:', error);
+            appState.isAnalyzing = false;
+            
+            // Show error message
+            const progressText = document.getElementById('progress-text');
+            if (progressText) {
+                progressText.innerHTML = `<span style="color: #ff6b6b;">❌ ${translateText('analysis_failed', {error: error.message})}</span>`;
+            }
+        });
+    }, 1000);
+}
+
+        // Real Gemini API analysis - REPLACES simulateGeminiAnalysis()
+async function analyzeWithGemini() {
+    if (!appState.uploadedImage) {
+        throw new Error("No image uploaded");
+    }
+
+    try {
+        // Convert image to base64
+        const base64Image = await fileToBase64(appState.uploadedImage);
+        
+        // Prepare the request to your backend
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: base64Image,
+                language: appState.language
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error analyzing with Gemini:', error);
+        throw error;
+    }
+}
+
+// Helper function to convert file to base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            // Remove the data:image/...;base64, prefix
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = error => reject(error);
+    });
+}
+
+        async function fetchMarketData(cropName) {
+            try {
+                // Call your backend API which will use the DATA_GOV_IN_API_KEY
+                const response = await fetch(`/api/market-prices?crop=${encodeURIComponent(cropName)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Market data API error: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching market data:', error);
+                throw error;
+            }
+        }
+
+        // Calculate average price from market data
+        function calculateAveragePrice(records) {
+            if (!records || records.length === 0) return 0;
+            
+            const total = records.reduce((sum, record) => {
+                return sum + (parseInt(record.modal_price) || 0);
+            }, 0);
+            
+            return Math.round(total / records.length);
+        }
+
+        function updateResultsTab() {
+            if (!appState.analysisResult) return;
+            
+            const result = appState.analysisResult;
+            const resultsContent = document.getElementById('results-content');
+            
+            resultsContent.innerHTML = `
+                <h3 style="color: var(--text-primary); margin-bottom: 2rem; font-weight: 700;">
+                    📋 ${translateText('analysis_results_title')}
+                </h3>
+                
+                <div class="result-card">
+                    <h2>🌾 ${translateText('crop_identification')}</h2>
+                    <p>• <strong>${translateText('commodity')}:</strong> ${result.crop}</p>
+                    <p>• <strong>${translateText('variety')}:</strong> ${result.variety}</p>
+                    <p>• <strong>${translateText('growth_stage')}:</strong> ${result.growthStage}</p>
+                </div>
+                
+                <div class="result-card">
+                    <h2>🔍 ${translateText('health_assessment')}</h2>
+                    <p>• <strong>${translateText('overall_condition')}:</strong> ${result.health}</p>
+                    <p>• <strong>${translateText('plant_vigor')}:</strong> Healthy growth pattern observed</p>
+                    <p>• <strong>${translateText('leaf_color')}:</strong> Normal green coloration</p>
+                </div>
+                
+                ${result.issues.length > 0 ? `
+                <div class="result-card">
+                    <h2>🦠 ${translateText('disease_pest_detection')}</h2>
+                    ${result.issues.map(issue => `
+                        <p>• <strong>${translateText('issue_detected')}:</strong> ${issue.name}</p>
+                        <p>• <strong>${translateText('severity')}:</strong> ${issue.severity}</p>
+                        <p>• <strong>${translateText('description')}:</strong> ${issue.description}</p>
+                    `).join('')}
+                </div>
+                
+                <div class="result-card">
+                    <h2>💊 ${translateText('treatment_recommendations')}</h2>
+                    ${result.issues.map(issue => `
+                        <p>• ${issue.treatment}</p>
+                    `).join('')}
+                </div>
+                ` : ''}
+                
+                <div class="result-card">
+                    <h2>🛡️ ${translateText('prevention_tips')}</h2>
+                    ${result.recommendations.map(rec => `
+                        <p>• ${rec}</p>
+                    `).join('')}
+                </div>
+                
+                <div class="result-card">
+                    <h2>🌱 ${translateText('growing_conditions')}</h2>
+                    <p>• <strong>${translateText('temperature')}:</strong> ${result.growingConditions.temperature}</p>
+                    <p>• <strong>${translateText('humidity')}:</strong> ${result.growingConditions.humidity}</p>
+                    <p>• <strong>${translateText('water')}:</strong> ${result.growingConditions.water}</p>
+                    <p>• <strong>${translateText('fertilizer')}:</strong> ${result.growingConditions.fertilizer}</p>
+                </div>
+                
+                <div class="result-card">
+                    <h2>📅 ${translateText('harvest_information')}</h2>
+                    <p>• <strong>${translateText('expected_harvest')}:</strong> ${result.harvestInfo.timeline}</p>
+                    <p>• <strong>${translateText('quality_indicators')}:</strong> ${result.harvestInfo.indicators}</p>
+                    <p>• <strong>${translateText('moisture_content')}:</strong> ${result.harvestInfo.moisture}</p>
+                    <p>• <strong>${translateText('yield_estimate')}:</strong> ${result.harvestInfo.yieldEstimate}</p>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h3 style="color: var(--text-primary); margin-bottom: 1.5rem;">🎯 ${translateText('quick_actions')}</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <button class="btn" onclick="downloadReport()">📥 ${translateText('download_report')}</button>
+                        <button class="btn btn-secondary" onclick="reanalyze()">🔄 ${translateText('re_analyze')}</button>
+                        <button class="btn" onclick="saveToHistory()">💾 ${translateText('save_to_history')}</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updatePricesTab() {
+    if (!appState.analysisResult) return;
+    
+    // Fetch real market data (REPLACED the simulateMarketDataFetch call)
+    fetchMarketData(appState.analysisResult.crop).then(data => {
+        appState.marketData = data;
+        
+        const pricesContent = document.getElementById('prices-content');
+        
+        if (!data || !data.records || data.records.length === 0) {
+            pricesContent.innerHTML = `
+                <div style="background: rgba(244, 67, 54, 0.15); padding: 2rem; border-radius: 15px; text-align: center; backdrop-filter: blur(10px);">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📉</div>
+                    <h4>${translateText('no_market_data', {crop_name: appState.analysisResult.crop})}</h4>
+                    <p>${translateText('api_unavailable_1')}</p>
+                    <p style="opacity: 0.8;">${translateText('api_unavailable_2')}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        pricesContent.innerHTML = `
+            <h3 style="color: var(--text-primary); margin-bottom: 2rem; font-weight: 700;">
+                💰 ${translateText('market_prices_title')}
+            </h3>
+            
+            <div style="background: rgba(76, 175, 80, 0.15); padding: 1.5rem; border-radius: 15px; border-left: 4px solid var(--accent-green); margin-bottom: 2rem; backdrop-filter: blur(10px);">
+                <h4>🌾 ${translateText('market_data_for', {crop: appState.analysisResult.crop})}</h4>
+            </div>
+            
+            <h4 style="color: var(--text-primary); margin-bottom: 1.5rem;">📈 ${translateText('market_overview')}</h4>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value">₹${calculateAveragePrice(data.records)}</div>
+                    <div class="metric-label">💵 ${translateText('avg_price')}</div>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">${translateText('avg_price_help')}</p>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">₹${Math.min(...data.records.map(r => parseInt(r.min_price) || parseInt(r.modal_price)))}</div>
+                    <div class="metric-label">📉 ${translateText('min_price')}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">₹${Math.max(...data.records.map(r => parseInt(r.max_price) || parseInt(r.modal_price)))}</div>
+                    <div class="metric-label">📈 ${translateText('max_price')}</div>
+                </div>
+            </div>
+            
+            <h4 style="color: var(--text-primary); margin: 2rem 0 1.5rem;">🏪 ${translateText('market_info_title')}</h4>
+            
+            <div style="display: grid; gap: 1rem;">
+                ${data.records.slice(0, 5).map(record => `
+                    <div class="glass-card" style="padding: 1.5rem;">
+                        <h4 style="color: var(--accent-green);">🏪 ${record.market} - ₹${record.modal_price}/Quintal</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                            <div>
+                                <p><strong>📍 ${translateText('location_details')}</strong></p>
+                                <p>• ${translateText('state')}: ${record.state}</p>
+                                <p>• ${translateText('district')}: ${record.district}</p>
+                                <p>• ${translateText('market')}: ${record.market}</p>
+                            </div>
+                            <div>
+                                <p><strong>💰 ${translateText('price_information')}</strong></p>
+                                <p>• ${translateText('modal_price')}: ₹${record.modal_price}/Quintal</p>
+                                ${record.min_price ? `<p>• ${translateText('min_price')}: ₹${record.min_price}/Quintal</p>` : ''}
+                                ${record.max_price ? `<p>• ${translateText('max_price')}: ₹${record.max_price}/Quintal</p>` : ''}
+                                ${record.arrival_date ? `<p>• ${translateText('arrival_date')}: ${record.arrival_date}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }).catch(error => {
+        const pricesContent = document.getElementById('prices-content');
+        pricesContent.innerHTML = `
+            <div style="background: rgba(244, 67, 54, 0.15); padding: 2rem; border-radius: 15px; text-align: center; backdrop-filter: blur(10px);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🔧</div>
+                <h4>${translateText('temp_unavailable_title')}</h4>
+                <p>${translateText('error_fetching_market_data', {error: error.message})}</p>
+                <p style="opacity: 0.8;">${translateText('temp_unavailable_text_2')}</p>
+            </div>
+        `;
+    });
+}
+
+        // Action functions
+        function downloadReport() {
+            alert(translateText('download_success'));
+        }
+
+        function reanalyze() {
+            if (appState.uploadedImage) {
+                startAnalysis();
+            }
+        }
+
+        function saveToHistory() {
+            alert(translateText('save_success'));
+        }
+
+        // Scroll to top functionality
+        const scrollTopBtn = document.getElementById('scroll-top');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        });
+
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Enhanced interactions and animations
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add entrance animations with staggered delays
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Add hover effects to metric cards
+            const metricCards = document.querySelectorAll('.metric-card');
+            metricCards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transform = 'translateY(-5px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Add click effects to buttons
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    let ripple = document.createElement('span');
+                    let rect = this.getBoundingClientRect();
+                    let size = Math.max(rect.width, rect.height);
+                    let x = e.clientX - rect.left - size / 2;
+                    let y = e.clientY - rect.top - size / 2;
+                    
+                    ripple.style.cssText = `
+                        position: absolute;
+                        width: ${size}px;
+                        height: ${size}px;
+                        left: ${x}px;
+                        top: ${y}px;
+                        background: rgba(255, 255, 255, 0.3);
+                        border-radius: 50%;
+                        transform: scale(0);
+                        animation: ripple 0.6s linear;
+                        pointer-events: none;
+                    `;
+                    
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+
+            // Add CSS for ripple animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes ripple {
+                    to {
+                        transform: scale(2);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+
+        console.log('🌱 AgroSnap initialized successfully! Ready to help farmers analyze their crops.');
+    </script>
+</body>
+</html>
