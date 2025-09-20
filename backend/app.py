@@ -89,6 +89,69 @@ TRANSLATIONS = {
         "Telugu": "దగ్గరలోని మండి",
         "Tamil": "அருகிலுள்ள மண்டி"
     },
+    "tab_weather": {
+        "English": "Weather Forecast",
+        "Hindi": "मौसम पूर्वानुमान",
+        "Marathi": "हवामान अंदाज",
+        "Telugu": "వాతావరణ సూచన",
+        "Tamil": "வானிலை முன்னறிவிப்பு"
+    },
+    "weather_title": {
+        "English": "Weather Forecast",
+        "Hindi": "मौसम पूर्वानुमान",
+        "Marathi": "हवामान अंदाज",
+        "Telugu": "వాతావరణ సూచన",
+        "Tamil": "வானிலை முன்னறிவிப்பு"
+    },
+    "current_weather": {
+        "English": "Current Weather",
+        "Hindi": "वर्तमान मौसम",
+        "Marathi": "सध्याचे हवामान",
+        "Telugu": "ప్రస్తుత వాతావరణం",
+        "Tamil": "தற்போதைய வானிலை"
+    },
+    "temperature": {
+        "English": "Temperature",
+        "Hindi": "तापमान",
+        "Marathi": "तापमान",
+        "Telugu": "ఉష్ణోగ్రత",
+        "Tamil": "வெப்பநிலை"
+    },
+    "humidity": {
+        "English": "Humidity",
+        "Hindi": "नमी",
+        "Marathi": "आर्द्रता",
+        "Telugu": "తేమ",
+        "Tamil": "ஈரப்பதம்"
+    },
+    "wind_speed": {
+        "English": "Wind Speed",
+        "Hindi": "हवा की गति",
+        "Marathi": "वाऱ्याचा वेग",
+        "Telugu": "గాలి వేగం",
+        "Tamil": "காற்றின் வேகம்"
+    },
+    "rain_probability": {
+        "English": "Rain Probability",
+        "Hindi": "बारिश की संभावना",
+        "Marathi": "पावसाची शक्यता",
+        "Telugu": "వర్షం సంభావ్యత",
+        "Tamil": "மழை நிகழ்தகவு"
+    },
+    "5_day_forecast": {
+        "English": "5-Day Forecast",
+        "Hindi": "5-दिन का पूर्वानुमान",
+        "Marathi": "५-दिवसांचा अंदाज",
+        "Telugu": "5-రోజుల సూచన",
+        "Tamil": "5-நாள் முன்னறிவிப்பு"
+    },
+    "get_location_first": {
+        "English": "Please get your location first to see the weather forecast.",
+        "Hindi": "मौसम का पूर्वानुमान देखने के लिए कृपया पहले अपना स्थान प्राप्त करें।",
+        "Marathi": "हवामानाचा अंदाज पाहण्यासाठी कृपया प्रथम आपले स्थान मिळवा.",
+        "Telugu": "వాతావరణ సూచనను చూడటానికి దయచేసి ముందుగా మీ స్థానాన్ని పొందండి.",
+        "Tamil": "வானிலை முன்னறிவிப்பைக் காண முதலில் உங்கள் இருப்பிடத்தைப் பெறவும்."
+    },
     "select_language": {
         "English": "Choose Language",
         "Hindi": "भाषा चुनें",
@@ -1039,7 +1102,7 @@ def input_img_bytes(uploaded_file):
         return image_data
     raise FileNotFoundError("File is not uploaded.")
 
-def get_mandi_prices(crop_name):
+def get_mandi_prices(crop_name, market_names=None):
     """Fetches mandi prices using Government of India's Agmarknet API with fallback options."""
     
     # Common crop name mappings for the API
@@ -1093,6 +1156,8 @@ def get_mandi_prices(crop_name):
                     "filters[commodity]": crop_variant,
                     "limit": 15,
                 }
+                if market_names:
+                    params["filters[market]"] = ",".join(market_names)
                 
                 # Add debugging info
                 st.write(f"Trying API call with crop name: {crop_variant}")
@@ -1250,6 +1315,50 @@ def create_price_chart(price_data):
     
     return fig
 
+import streamlit.components.v1 as components
+
+def get_location():
+    """Renders an HTML component to get the user's location and returns it."""
+    html_string = """
+    <script>
+    const sendLocation = (latitude, longitude) => {
+      Streamlit.setComponentValue({
+        "latitude": latitude,
+        "longitude": longitude
+      })
+    }
+
+    const handleError = (error) => {
+      console.error("Error getting location:", error);
+      Streamlit.setComponentValue(null); // Send null on error
+    }
+
+    const getLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            sendLocation(position.coords.latitude, position.coords.longitude);
+          },
+          handleError,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        console.error("Geolocation is not supported by this browser.");
+        Streamlit.setComponentValue(null);
+      }
+    }
+
+    // Automatically trigger location request on component load
+    getLocation();
+    </script>
+    """
+    location = components.html(html_string, height=0)
+    return location
+
 def find_nearest_mandis(latitude, longitude, language):
     """Finds nearest mandis using OpenStreetMap."""
     headers = {
@@ -1271,6 +1380,32 @@ def find_nearest_mandis(latitude, longitude, language):
     except requests.exceptions.RequestException as e:
         st.error(f"Error fetching mandis: {e}")
         return None
+
+def get_weather_forecast(lat, lon):
+    """Fetches weather data from OpenWeatherMap API."""
+    # IMPORTANT: Replace with your own OpenWeatherMap API key
+    api_key = "YOUR_OPENWEATHERMAP_API_KEY"
+    if api_key == "YOUR_OPENWEATHERMAP_API_KEY":
+        st.warning("Please replace 'YOUR_OPENWEATHERMAP_API_KEY' with your actual OpenWeatherMap API key.")
+        return None, None
+
+    try:
+        # Get current weather
+        current_weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+        current_response = requests.get(current_weather_url)
+        current_response.raise_for_status()
+        current_data = current_response.json()
+
+        # Get 5-day forecast
+        forecast_url = f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+        forecast_response = requests.get(forecast_url)
+        forecast_response.raise_for_status()
+        forecast_data = forecast_response.json()
+
+        return current_data, forecast_data
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching weather data: {e}")
+        return None, None
 
 # --- Initialize Session State ---
 if 'gemini_response_json' not in st.session_state:
@@ -1295,8 +1430,14 @@ if 'active_tab' not in st.session_state:
     st.session_state.active_tab = 0
 if 'auto_redirect' not in st.session_state:
     st.session_state.auto_redirect = False
+if 'user_location' not in st.session_state:
+    st.session_state.user_location = None
 
 # --- UI Layout ---
+
+location = get_location()
+if location and 'latitude' in location and 'longitude' in location:
+    st.session_state.user_location = location
 
 # Beautiful header
 st.markdown(f"""
@@ -1315,7 +1456,8 @@ tab_names = [
     f"📤 {_('tab_upload')}",
     f"🔍 {_('tab_results')}",
     f"📊 {_('tab_prices')}",
-    f"📍 {_('tab_mandi')}"
+    f"📍 {_('tab_mandi')}",
+    f"☀️ {_('tab_weather')}"
 ]
 
 # Handle auto-redirect to results tab
@@ -1357,6 +1499,11 @@ with tabs[0]:
             st.session_state.translated_response = None
             st.rerun()
         
+        if st.session_state.user_location:
+            st.success(f"Location found: {st.session_state.user_location['latitude']:.4f}, {st.session_state.user_location['longitude']:.4f}")
+        else:
+            st.info("Attempting to get your location. Please grant permission if prompted.")
+
         st.markdown(f"### 📸 {_('upload_image')}")
         
         # Enhanced file uploader
@@ -1588,6 +1735,8 @@ with tabs[1]:
                 }]
                 st.success(_("save_success"))
     
+    elif not st.session_state.user_location:
+        st.info(_('get_location_first'))
     else:
         st.markdown(f"""
         <div class="empty-state">
@@ -1603,10 +1752,9 @@ with tabs[1]:
 with tabs[2]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     
-    if st.session_state.gemini_response:
+    if st.session_state.gemini_response and st.session_state.user_location:
         # Extract crop name from analysis
         try:
-            # Simple regex to find crop name (assumes it's mentioned in the analysis)
             import re
             crop_match = re.search(r'Crop name.*?([A-Za-z\s]+)', st.session_state.gemini_response, re.IGNORECASE)
             crop_name = crop_match.group(1).strip() if crop_match else "Unknown Crop"
@@ -1614,19 +1762,25 @@ with tabs[2]:
             crop_name = "Unknown Crop"
         
         st.markdown(f"### 📈 {_('market_prices_title')}")
+
+        user_lat = st.session_state.user_location['latitude']
+        user_lon = st.session_state.user_location['longitude']
+
+        nearby_mandis = find_nearest_mandis(user_lat, user_lon, st.session_state.language)
+        market_names = [m.get('display_name', '').split(',')[0] for m in nearby_mandis] if nearby_mandis else None
+
         st.markdown(f"**{_('market_data_for').format(crop=crop_name)}**")
         
-        # Fetch market prices
-        if not st.session_state.mandi_prices:
-            with st.spinner(f"⏳ {_('fetching_prices')}"):
-                try:
-                    st.session_state.mandi_prices = get_mandi_prices(crop_name)
-                except Exception as e:
-                    st.error(_("error_fetching_market_data").format(error=str(e)))
-                    st.session_state.mandi_prices = None
+        # Fetch market prices for nearby mandis
+        with st.spinner(f"⏳ {_('fetching_prices')}"):
+            try:
+                mandi_prices = get_mandi_prices(crop_name, market_names=market_names)
+            except Exception as e:
+                st.error(_("error_fetching_market_data").format(error=str(e)))
+                mandi_prices = None
         
-        if st.session_state.mandi_prices and st.session_state.mandi_prices.get('records'):
-            records = st.session_state.mandi_prices['records']
+        if mandi_prices and mandi_prices.get('records'):
+            records = mandi_prices['records']
             
             # Calculate average price
             prices = [float(record.get('modal_price', 0)) for record in records if record.get('modal_price')]
@@ -1668,7 +1822,7 @@ with tabs[2]:
             st.markdown("<br>", unsafe_allow_html=True)
             
             # Price chart
-            price_chart = create_price_chart(st.session_state.mandi_prices)
+            price_chart = create_price_chart(mandi_prices)
             if price_chart:
                 st.plotly_chart(price_chart, use_container_width=True)
             
@@ -1720,45 +1874,79 @@ with tabs[3]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown(f"### 📍 {_('tab_mandi')}")
 
-    # Fixed location for now
-    user_lat, user_lon = 19.0760, 72.8777
+    if st.session_state.user_location:
+        user_lat = st.session_state.user_location['latitude']
+        user_lon = st.session_state.user_location['longitude']
 
-    with st.spinner("Finding nearest mandis..."):
-        mandis = find_nearest_mandis(user_lat, user_lon, st.session_state.language)
+        with st.spinner("Finding nearest mandis..."):
+            mandis = find_nearest_mandis(user_lat, user_lon, st.session_state.language)
 
-        if mandis:
-            # Create a map centered on the user's location
-            m = folium.Map(location=[user_lat, user_lon], zoom_start=12)
+            if mandis:
+                # Create a map centered on the user's location
+                m = folium.Map(location=[user_lat, user_lon], zoom_start=12)
 
-            # Add user location marker
-            folium.Marker(
-                [user_lat, user_lon],
-                popup="Your Location",
-                tooltip="You are here!",
-                icon=folium.Icon(color='blue', icon='user')
-            ).add_to(m)
-
-            # Add mandi markers
-            for mandi in mandis:
-                lat = float(mandi['lat'])
-                lon = float(mandi['lon'])
-                name = mandi.get('display_name', 'Unknown Mandi')
-
+                # Add user location marker
                 folium.Marker(
-                    [lat, lon],
-                    popup=name,
-                    tooltip=name,
-                    icon=folium.Icon(color='green', icon='leaf')
+                    [user_lat, user_lon],
+                    popup="Your Location",
+                    tooltip="You are here!",
+                    icon=folium.Icon(color='blue', icon='user')
                 ).add_to(m)
 
-            # Render the map
-            st_folium(m, width=725, height=500)
-        else:
-            st.warning("Could not find any mandis near your location.")
+                # Add mandi markers
+                for mandi in mandis:
+                    lat = float(mandi['lat'])
+                    lon = float(mandi['lon'])
+                    name = mandi.get('display_name', 'Unknown Mandi')
+
+                    folium.Marker(
+                        [lat, lon],
+                        popup=name,
+                        tooltip=name,
+                        icon=folium.Icon(color='green', icon='leaf')
+                    ).add_to(m)
+
+                # Render the map
+                st_folium(m, use_container_width=True)
+            else:
+                st.warning("Could not find any mandis near your location.")
+    else:
+        st.info(_('get_location_first'))
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer
+with tabs[4]:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown(f"### ☀️ {_('weather_title')}")
+
+    if st.session_state.user_location:
+        lat = st.session_state.user_location['latitude']
+        lon = st.session_state.user_location['longitude']
+
+        current_weather, forecast = get_weather_forecast(lat, lon)
+
+        if current_weather and forecast:
+            st.markdown(f"#### {_('current_weather')}")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(label=_('temperature'), value=f"{current_weather['main']['temp']} °C")
+            with col2:
+                st.metric(label=_('humidity'), value=f"{current_weather['main']['humidity']}%")
+            with col3:
+                st.metric(label=_('wind_speed'), value=f"{current_weather['wind']['speed']} m/s")
+
+            st.markdown(f"#### {_('5_day_forecast')}")
+            with st.expander("View 5-Day Forecast Details"):
+                for entry in forecast['list'][::8]: # Show forecast for every 24 hours
+                    st.write(f"**{datetime.fromtimestamp(entry['dt']).strftime('%A, %b %d')}**")
+                    st.write(f"&nbsp;&nbsp;&nbsp;{_('temperature')}: {entry['main']['temp_min']}°C - {entry['main']['temp_max']}°C")
+                    st.write(f"&nbsp;&nbsp;&nbsp;{entry['weather'][0]['description'].capitalize()}")
+    else:
+        st.info(_('get_location_first'))
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
 st.markdown("""
 <div style="text-align: center; padding: 2rem 0; color: var(--text-color); opacity: 0.7;">
     <p>🌱 {_("app_name")} - Powered by Google Gemini AI</p>
