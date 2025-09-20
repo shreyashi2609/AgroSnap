@@ -82,6 +82,13 @@ TRANSLATIONS = {
         "Telugu": "మార్కెట్ ధరలు",
         "Tamil": "சந்தை விலைகள்"
     },
+    "tab_mandi": {
+        "English": "Nearest Mandi",
+        "Hindi": "निकटतम मंडी",
+        "Marathi": "जवळची मंडी",
+        "Telugu": "దగ్గరలోని మండి",
+        "Tamil": "அருகிலுள்ள மண்டி"
+    },
     "select_language": {
         "English": "Choose Language",
         "Hindi": "भाषा चुनें",
@@ -1243,6 +1250,28 @@ def create_price_chart(price_data):
     
     return fig
 
+def find_nearest_mandis(latitude, longitude, language):
+    """Finds nearest mandis using OpenStreetMap."""
+    headers = {
+        'User-Agent': 'AgroSnap/1.0 (your-email@example.com)'
+    }
+    params = {
+        'q': 'agricultural market',
+        'lat': latitude,
+        'lon': longitude,
+        'format': 'json',
+        'limit': 10,
+        'addressdetails': 1,
+        'accept-language': language
+    }
+    try:
+        response = requests.get("https://nominatim.openstreetmap.org/search", headers=headers, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching mandis: {e}")
+        return None
+
 # --- Initialize Session State ---
 if 'gemini_response_json' not in st.session_state:
     st.session_state.gemini_response_json = None
@@ -1278,11 +1307,15 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+import folium
+from streamlit_folium import st_folium
+
 # Enhanced tabs with automatic redirection
 tab_names = [
     f"📤 {_('tab_upload')}",
     f"🔍 {_('tab_results')}",
-    f"📊 {_('tab_prices')}"
+    f"📊 {_('tab_prices')}",
+    f"📍 {_('tab_mandi')}"
 ]
 
 # Handle auto-redirect to results tab
@@ -1681,6 +1714,48 @@ with tabs[2]:
         </div>
         """, unsafe_allow_html=True)
     
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with tabs[3]:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown(f"### 📍 {_('tab_mandi')}")
+
+    # Fixed location for now
+    user_lat, user_lon = 19.0760, 72.8777
+
+    with st.spinner("Finding nearest mandis..."):
+        mandis = find_nearest_mandis(user_lat, user_lon, st.session_state.language)
+
+        if mandis:
+            # Create a map centered on the user's location
+            m = folium.Map(location=[user_lat, user_lon], zoom_start=12)
+
+            # Add user location marker
+            folium.Marker(
+                [user_lat, user_lon],
+                popup="Your Location",
+                tooltip="You are here!",
+                icon=folium.Icon(color='blue', icon='user')
+            ).add_to(m)
+
+            # Add mandi markers
+            for mandi in mandis:
+                lat = float(mandi['lat'])
+                lon = float(mandi['lon'])
+                name = mandi.get('display_name', 'Unknown Mandi')
+
+                folium.Marker(
+                    [lat, lon],
+                    popup=name,
+                    tooltip=name,
+                    icon=folium.Icon(color='green', icon='leaf')
+                ).add_to(m)
+
+            # Render the map
+            st_folium(m, width=725, height=500)
+        else:
+            st.warning("Could not find any mandis near your location.")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer

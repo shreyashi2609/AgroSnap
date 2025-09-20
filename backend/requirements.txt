@@ -4,3 +4,5 @@ python-multipart
 google-generativeai
 requests
 python-dotenv
+folium
+streamlit-folium
