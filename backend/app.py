@@ -805,7 +805,7 @@ st.markdown("""
     .app-header h1 {
         font-size: 3rem;
         margin-bottom: 0.5rem;
-        background: linear-gradient(45deg, var(--accent-yellow), var(--primary-green));
+        background: linear-gradient(45deg, var(--dark-green), var(--primary-green));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -872,18 +872,77 @@ st.markdown("""
     .metric-container {
         background: rgba(255, 255, 255, 0.9);
         backdrop-filter: blur(10px);
-        border-radius: 15px;
+        border-radius: 20px;
         padding: 1.5rem;
         text-align: center;
         transition: all 0.3s ease;
         border: 1px solid rgba(144, 238, 144, 0.3);
+        height: 100%;
     }
     
     .metric-container:hover {
-        transform: translateY(-3px);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 128, 0, 0.1);
         background: var(--light-green);
     }
     
+    .metric-container h3 {
+        font-size: 2.2rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Market Price Card Styling */
+    .market-list-container {
+        margin-top: 2rem;
+    }
+
+    .market-card {
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 5px solid var(--primary-green);
+        transition: all 0.3s ease-in-out;
+        box-shadow: 0 2px 10px rgba(0, 128, 0, 0.05);
+    }
+    
+    .market-card:hover {
+        transform: translateX(5px) scale(1.01);
+        box-shadow: 0 8px 25px rgba(0, 128, 0, 0.1);
+        border-left-color: var(--accent-yellow);
+    }
+
+    .market-card h4 {
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+        color: var(--dark-green);
+        font-weight: 600;
+    }
+
+    .market-card p {
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+    }
+    
+    .price-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--light-green);
+    }
+
+    .price-tag {
+        background: var(--light-green);
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        text-align: center;
+        font-size: 1.1rem;
+        color: var(--dark-green);
+    }
+
     /* Loading animation */
     .loading-text {
         background: linear-gradient(45deg, var(--primary-green), var(--accent-yellow));
@@ -1539,6 +1598,8 @@ with tabs[2]:
             # Calculate average price
             prices = [float(record.get('modal_price', 0)) for record in records if record.get('modal_price')]
             avg_price = sum(prices) / len(prices) if prices else 0
+            high_price = max(prices) if prices else 0
+            low_price = min(prices) if prices else 0
             
             # Display metrics
             st.markdown(f"### 📊 {_('market_overview')}")
@@ -1547,11 +1608,31 @@ with tabs[2]:
             with col_metric1:
                 st.markdown(f"""
                 <div class="metric-container">
-                    <p style="font-size: 1.1rem; color: var(--dark-green);">{_('avg_price')}</p>
-                    <h3 style="color: var(--success-color);">₹{avg_price:.2f}</h3>
+                    <p style="font-size: 1.1rem; color: var(--dark-green);">📉 {_('min_price')}</p>
+                    <h3 style="color: var(--error-color);">₹{low_price:.2f}</h3>
                     <p style="opacity: 0.7;">{_('avg_price_help')}</p>
                 </div>
                 """, unsafe_allow_html=True)
+
+            with col_metric2:
+                st.markdown(f"""
+                <div class="metric-container">
+                    <p style="font-size: 1.1rem; color: var(--dark-green);">{_('avg_price')}</p>
+                    <h3 style="color: var(--warning-color);">₹{avg_price:.2f}</h3>
+                    <p style="opacity: 0.7;">{_('avg_price_help')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with col_metric3:
+                st.markdown(f"""
+                <div class="metric-container">
+                    <p style="font-size: 1.1rem; color: var(--dark-green);">📈 {_('max_price')}</p>
+                    <h3 style="color: var(--success-color);">₹{high_price:.2f}</h3>
+                    <p style="opacity: 0.7;">{_('avg_price_help')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
             
             # Price chart
             price_chart = create_price_chart(st.session_state.mandi_prices)
@@ -1561,24 +1642,25 @@ with tabs[2]:
             # Detailed market information
             st.markdown(f"### 📋 {_('market_info_title')}")
             
+            st.markdown('<div class="market-list-container">', unsafe_allow_html=True)
             for record in records[:5]:  # Show top 5 markets
-                with st.expander(f"{record.get('market', 'Unknown')} - {record.get('state', 'N/A')}"):
-                    st.markdown(f"""
-                    **{_('location_details')}**
-                    - **{_('state')}**: {record.get('state', 'N/A')}
-                    - **{_('district')}**: {record.get('district', 'N/A')}
-                    - **{_('market')}**: {record.get('market', 'N/A')}
-                    
-                    **{_('commodity_info')}**
-                    - **{_('commodity')}**: {record.get('commodity', 'N/A')}
-                    - **{_('variety')}**: {record.get('variety', 'N/A')}
-                    
-                    **{_('price_information')}**
-                    - **{_('modal_price')}**: ₹{record.get('modal_price', 'N/A')}
-                    - **{_('min_price')}**: ₹{record.get('min_price', 'N/A')}
-                    - **{_('max_price')}**: ₹{record.get('max_price', 'N/A')}
-                    - **{_('arrival_date')}**: {record.get('arrival_date', 'N/A')}
-                    """)
+                st.markdown(f"""
+                <div class="market-card">
+                    <h4>{record.get('market', 'Unknown')} - <span style="font-weight: 400; opacity: 0.8;">{record.get('state', 'N/A')}</span></h4>
+                    <p><strong>{_('commodity')}:</strong> {record.get('commodity', 'N/A')} ({record.get('variety', 'N/A')})</p>
+                    <div class="price-details">
+                        <div>
+                            <p><strong>{_('min_price')}:</strong> ₹{record.get('min_price', 'N/A')}</p>
+                            <p><strong>{_('max_price')}:</strong> ₹{record.get('max_price', 'N/A')}</p>
+                        </div>
+                        <div class="price-tag">
+                            {_('modal_price')}<br>₹{record.get('modal_price', 'N/A')}
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
         else:
             st.markdown(f"""
             <div class="empty-state">
@@ -1604,7 +1686,7 @@ with tabs[2]:
 # Footer
 st.markdown("""
 <div style="text-align: center; padding: 2rem 0; color: var(--text-color); opacity: 0.7;">
-    <p>🌱 {_('AgroSnap')} - Powered by Google Gemini AI</p>
+    <p>🌱 {_("app_name")} - Powered by Google Gemini AI</p>
     <p>Supporting farmers with real-time crop analysis and market insights</p>
 </div>
 """, unsafe_allow_html=True)
