@@ -14,6 +14,9 @@ import pandas as pd
 from datetime import datetime, timedelta
 import random
 import streamlit.components.v1 as components
+import re
+import math
+from streamlit_geolocation import streamlit_geolocation
 
 # Set page config first
 st.set_page_config(
@@ -27,6 +30,8 @@ st.set_page_config(
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 DATA_GOV_IN_API_KEY = os.getenv("DATA_GOV_IN_API_KEY")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
 
 # Configure the Google API key
 genai.configure(api_key=GOOGLE_API_KEY)
@@ -81,6 +86,20 @@ TRANSLATIONS = {
         "Marathi": "बाजार भाव",
         "Telugu": "మార్కెట్ ధరలు",
         "Tamil": "சந்தை விலைகள்"
+    },
+    "tab_mandi": {
+        "English": "Nearest Mandi",
+        "Hindi": "निकटतम मंडी",
+        "Marathi": "जवळची मंडी",
+        "Telugu": "దగ్గరలోని మండి",
+        "Tamil": "அருகிலுள்ள மண்டி"
+    },
+    "tab_alerts": {
+        "English": "Predictive Disease Alerts",
+        "Hindi": "भविष्यसूचक रोग अलर्ट",
+        "Marathi": "भविष्यसूचक रोग अलर्ट",
+        "Telugu": "అంచనా వ్యాధి హెచ్చరికలు",
+        "Tamil": "முன்கூட்டிய நோய் விழிப்பூட்டல்கள்"
     },
     "select_language": {
         "English": "Choose Language",
@@ -183,8 +202,8 @@ TRANSLATIONS = {
     "preview_placeholder_1": {
         "English": "Image preview will appear here",
         "Hindi": "छवि पूर्वावलोकन यहाँ दिखाई देगा",
-        "Marathi": "इमेजचे पूर्वावलोकन येथे दिसेल",
-        "Telugu": "చిత్ర ప్రివ్యూ ఇక్కడ కనిపిస్తుంది",
+        "Marathi": "इमेजचे पूर्वाவलोकन येथे दिसेल",
+        "Telugu": "చిత్రం ప్రివ్యూ ఇక్కడ కనిపిస్తుంది",
         "Tamil": "பட முன்னோட்டம் இங்கே தோன்றும்"
     },
     "preview_placeholder_2": {
@@ -254,7 +273,7 @@ TRANSLATIONS = {
         "English": "Analysis completed successfully! Check the 'Analysis Results' tab for detailed insights.",
         "Hindi": "विश्लेषण सफलतापूर्वक पूरा हो गया है! विस्तृत जानकारी के लिए 'विश्लेषण परिणाम' टैब देखें।",
         "Marathi": "विश्लेषण यशस्वीरित्या पूर्ण झाले आहे! सखोल माहितीसाठी 'विश्लेषण परिणाम' टॅब तपासा.",
-        "Telugu": "విశ్లేషణ విజయవంతంగా పూర్తయింది! వివరణాత్మక అంతర్దృష్టుల కోసం 'విశ్లేషణ ఫలితాలు' ట్యాబ్‌ను తనిఖీ చేయండి.",
+        "Telugu": "విశ్లేషణ విజయవంతంగా పూర్తయింది! వివరణాత్మక అంతర్దృష్టుల కోసం 'విశ్లేషణ ఫలితాలు' ట్యాబ్‌ను తనిఖీ చేయండి।",
         "Tamil": "பகுப்பாய்வு வெற்றிகரமாக முடிந்தது! விரிவான நுண்ணறிவுகளுக்கு 'பகுப்பாய்வு முடிவுகள்' தாவலை சரிபார்க்கவும்."
     },
     "analysis_failed": {
@@ -401,7 +420,7 @@ TRANSLATIONS = {
         "English": "Report downloaded successfully!",
         "Hindi": "रिपोर्ट सफलतापूर्वक डाउनलोड हो गई है!",
         "Marathi": "अहवाल यशस्वीरित्या डाउनलोड झाला आहे!",
-        "Telugu": "నివేదిక విజయవంతంగా డౌన్‌లోడ్ చేయబడింది!",
+        "Telugu": "నివేదన విజయవంతంగా డౌన్‌లోడ్ చేయబడింది!",
         "Tamil": "அறிக்கை வெற்றிகரமாக பதிவிறக்கம் செய்யப்பட்டது!"
     },
     "re_analyze": {
@@ -519,15 +538,15 @@ TRANSLATIONS = {
     "api_unavailable_1": {
         "English": "Market prices might not be available for this specific crop or the API might be temporarily unavailable.",
         "Hindi": "इस विशेष फसल के लिए बाजार मूल्य उपलब्ध नहीं हो सकते हैं या एपीआई अस्थायी रूप से अनुपलब्ध हो सकता है।",
-        "Marathi": "या विशिष्ट पिकासाठी बाजार भाव उपलब्ध नसतील किंवा एपीआय तात्पुरते अनुपलब्ध असू शकते.",
-        "Telugu": "ఈ నిర్దిష్ట పంటకు మార్కెట్ ధరలు అందుబాటులో ఉండకపోవచ్చు లేదా API తాత్కాలికంగా అందుబాటులో ఉండకపోవచ్చు.",
+        "Marathi": "या विशिष्ट पिकासाठी बाजार भाव उपलब्ध नसतील किंवा एपीआय तात्पुरते अनुपलब्ध असू शकते।",
+        "Telugu": "ఈ నిర్దిష్ట పంటకు మార్కెట్ ధరలు అందుబాటులో ఉండకపోవచ్చు లేదా API తాత్కాలికంగా అందుబాటులో ఉండకపోవచ్చు।",
         "Tamil": "இந்த குறிப்பிட்ட பயிருக்கு சந்தை விலைகள் கிடைக்காமல் போகலாம் அல்லது API தற்காலிகமாக கிடைக்காமல் போகலாம்."
     },
     "api_unavailable_2": {
         "English": "Try again later or check with local agricultural markets.",
         "Hindi": "बाद में फिर से प्रयास करें या स्थानीय कृषि बाजारों से जांच करें।",
-        "Marathi": "नंतर पुन्हा प्रयत्न करा किंवा स्थानिक कृषी बाजारपेठांशी संपर्क साधा.",
-        "Telugu": "తరువాత మళ్లీ ప్రయత్నించండి లేదా స్థానిక వ్యవసాయ మార్కెట్లను సంప్రదించండి.",
+        "Marathi": "नंतर पुन्हा प्रयत्न करा किंवा स्थानिक कृषी बाजारपेठांशी संपर्क साधा।",
+        "Telugu": "తరువాత మళ్లీ ప్రయత్నించండి లేదా స్థానిక వ్యవసాయ మార్కెట్లను సంప్రదించండి।",
         "Tamil": "பின்னர் மீண்டும் முயற்சிக்கவும் அல்லது உள்ளூர் வேளாண் சந்தைகளை சரிபார்க்கவும்."
     },
     "error_fetching_market_data": {
@@ -547,16 +566,16 @@ TRANSLATIONS = {
     "temp_unavailable_text_1": {
         "English": "We're experiencing technical difficulties accessing market data.",
         "Hindi": "हमें बाजार डेटा तक पहुँचने में तकनीकी कठिनाई हो रही है।",
-        "Marathi": "आम्हाला बाजार डेटा ऍक्सेस करताना तांत्रिक अडचणी येत आहेत.",
-        "Telugu": "మార్కెట్ డేటాను యాక్సెస్ చేయడంలో మాకు సాంకేతిక సమస్యలు ఎదురవుతున్నాయి.",
-        "Tamil": "சந்தை தரவை அணுகுவதில் தொழில்நுட்ப சிக்கல்கள் உள்ளன."
+        "Marathi": "आम्हाला बाजार डेटा ऍक्సెస్ करताना तांत्रिक अडचणी येत आहेत।",
+        "Telugu": "మార్కెట్ డేటాను యాక్సెస్ చేయడంలో మాకు సాంకేతిక సమస్యలు ఎదురవుతున్నాయి।",
+        "Tamil": "சந்தை தரவு தற்காலிகமாக கிடைக்கவில்லை"
     },
     "temp_unavailable_text_2": {
         "English": "Please try again in a few moments.",
         "Hindi": "कृपया कुछ देर बाद फिर से प्रयास करें।",
-        "Marathi": "कृपया काही क्षणात पुन्हा प्रयत्न करा.",
-        "Telugu": "దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.",
-        "Tamil": "தயவுசெய்து சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்."
+        "Marathi": "कृपया काही क्षणात पुन्हा प्रयत्न करा।",
+        "Telugu": "దయచేసి కొద్దిసేపటి తర్వాత మళ్లీ ప్రయత్నించండి।",
+        "Tamil": "தயவுசெய்து சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்।"
     },
     "prices_awaiting_analysis_title": {
         "English": "Market Prices Awaiting Analysis",
@@ -578,40 +597,127 @@ TRANSLATIONS = {
         "Marathi": "वास्तविक-वेळ बाजार भाव • किंमत कल • बाजार माहिती",
         "Telugu": "నిజ-సమయ మార్కెట్ ధరలు • ధరల పోకడలు • మార్కెట్ సమాచారం",
         "Tamil": "நிகழ்நேர சந்தை விலைகள் • விலை போக்குகள் • சந்தை தகவல்"
+    },
+    "searching_mandis": {
+        "English": "Searching for nearby mandis...",
+        "Hindi": "निकटतम मंडियों की खोज हो रही है...",
+        "Marathi": "जवळच्या मंड्यांचा शोध घेत आहे...",
+        "Telugu": "సమీపంలోని మండిల కోసం వెతుకుతోంది...",
+        "Tamil": "அருகிலுள்ள மண்டிகளைத் தேடுகிறது..."
+    },
+    "mandis_found": {
+        "English": "Found {count} mandis nearby.",
+        "Hindi": "आस-पास {count} मंडियां मिलीं।",
+        "Marathi": "जवळपास {count} मंड्या सापडल्या.",
+        "Telugu": "సమీపంలో {count} మండిలు దొరికాయి.",
+        "Tamil": "அருகில் {count} மண்டிகள் கிடைத்தன."
+    },
+    "no_mandis_found": {
+        "English": "Could not find any mandis near your location.",
+        "Hindi": "आपके स्थान के पास कोई मंडी नहीं मिली।",
+        "Marathi": "तुमच्या स्थानाच्या जवळ कोणतीही मंडी सापडली नाही.",
+        "Telugu": "మీ స్థానం దగ్గర మండిలు దొరకలేదు।",
+        "Tamil": "உங்கள் இருப்பிடத்திற்கு அருகில் மண்டிகள் எதுவும் கிடைக்கவில்லை।"
+    },
+    "your_location": {
+        "English": "Your Location",
+        "Hindi": "आपका स्थान",
+        "Marathi": "तुमचे स्थान",
+        "Telugu": "మీ స్థానం",
+        "Tamil": "உங்கள் இருப்பிடம்"
+    },
+    "you_are_here": {
+        "English": "You are here!",
+        "Hindi": "आप यहां हैं!",
+        "Marathi": "तुम्ही येथे आहात!",
+        "Telugu": "మీరు ఇక్కడ ఉన్నారు!",
+        "Tamil": "நீங்கள் இங்கே உள்ளீர்கள்!"
+    },
+    "api_key_error": {
+        "English": "API key error: Google Maps API key is missing or invalid. Please check your `.env` file and ensure the Places API is enabled.",
+        "Hindi": "एपीआई कुंजी त्रुटि: Google Maps API कुंजी गुम है या अमान्य है। कृपया अपनी `.env` फ़ाइल जांचें और सुनिश्चित करें कि प्लेसेस एपीआई सक्षम है।",
+        "Marathi": "API की त्रुटी: Google Maps API की सापडत नाही किंवा अवैध आहे. कृपया तुमची `.env` फाइल तपासा आणि प्लेसेस API सक्षम असल्याची खात्री करा.",
+        "Telugu": "API కీ లోపం: Google Maps API కీ లేదు లేదా చెల్లనిది. దయచేసి మీ `.env` ఫైల్‌ని తనిఖీ చేయండి మరియు ప్లేసెస్ API ప్రారంభించబడిందని నిర్ధారించుకోండి.",
+        "Tamil": "API விசை பிழை: Google Maps API விசை இல்லை அல்லது செல்லாது. உங்கள் `.env` கோப்பை சரிபார்க்கவும் மற்றும் Places API செயல்படுத்தப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்."
+    },
+    "weather_api_error": {
+        "English": "Weather API error: {error}. Please check your API key and project settings.",
+        "Hindi": "मौसम एपीआई त्रुटि: {error}। कृपया आपली API की आणि प्रोजेक्ट सेटिंग्ज तपासा.",
+        "Marathi": "हवामान API त्रुटी: {error}. कृपया तुमची API की आणि प्रोजेक्ट सेटिंग्ज तपासा.",
+        "Telugu": "వాతావరణ API లోపం: {error}. దయచేసి మీ API కీ మరియు ప్రాజెక్ట్ సెట్టింగ్‌లను తనిఖీ చేయండి.",
+        "Tamil": "வானிலை API பிழை: {error}. உங்கள் API விசை மற்றும் திட்ட அமைப்புகளை சரிபார்க்கவும்."
+    },
+    "predictive_alerts_title": {
+        "English": "Predictive Disease Alerts",
+        "Hindi": "भविष्यसूचक रोग अलर्ट",
+        "Marathi": "भविष्यसूचक रोग अलर्ट",
+        "Telugu": "అంచనా వ్యాధి హెచ్చరికలు",
+        "Tamil": "முன்கூட்டிய நோய் விழிப்பூட்டல்கள்"
+    },
+    "predictive_alerts_text": {
+        "English": "Analyzing current weather patterns for potential crop disease risks based on your crop analysis...",
+        "Hindi": "आपके फसल विश्लेषण के आधार पर संभावित फसल रोग जोखिमों के लिए वर्तमान मौसम पैटर्न का विश्लेषण...",
+        "Marathi": "तुमच्या पीक विश्लेषणाच्या आधारे संभाव्य पीक रोग धोक्यांसाठी वर्तमान हवामान पद्धतींचे विश्लेषण करत आहे...",
+        "Telugu": "మీ పంట విశ్లేషణ ఆధారంగా సంభావ్య పంట వ్యాధి ప్రమాదాల కోసం ప్రస్తుత వాతావరణ నమూనాలను విశ్లేషిస్తోంది...",
+        "Tamil": "உங்கள் பயிர் பகுப்பாய்வின் அடிப்படையில் சாத்தியமான பயிர் நோய் அபாயங்களுக்காக தற்போதைய வானிலை முறைகளை பகுப்பாய்வு செய்கிறது..."
+    },
+    "no_disease_detected": {
+        "English": "✅ No disease was detected in the initial crop analysis. All clear!",
+        "Hindi": "✅ प्रारंभिक फसल विश्लेषण में कोई रोग नहीं पाया गया। सब ठीक है!",
+        "Marathi": "✅ प्राथमिक पीक विश्लेषणात कोणताही रोग आढळला नाही. सर्व काही ठीक आहे!",
+        "Telugu": "✅ ప్రారంభ పంట విశ్లేషణలో ఏ వ్యాధి కనుగొనబడలేదు. అంతా స్పష్టంగా ఉంది!",
+        "Tamil": "✅ ஆரம்ப பயிர் பகுாய்வில் எந்த நோயும் கண்டறியப்படவில்லை. எல்லாம் தெளிவாக உள்ளது!"
+    },
+     "generating_prediction": {
+        "English": "Generating predictive alert for {disease_name} based on weather...",
+        "Hindi": "मौसम के आधार पर {disease_name} के लिए भविष्य कहनेवाला अलर्ट तैयार किया जा रहा है...",
+        "Marathi": "हवामानावर आधारित {disease_name} साठी भविष्यवाणी सूचना तयार करत आहे...",
+        "Telugu": "{disease_name} కోసం వాతావరణం ఆధారంగా అంచనా హెచ్చరికను రూపొందిస్తోంది...",
+        "Tamil": "வானிலை அடிப்படையில் {disease_name} க்கான முன்கணிப்பு எச்சரிக்கை உருவாக்கப்படுகிறது..."
+    },
+    "gemini_prediction_header": {
+        "English": "🤖 Gemini-Powered Prediction",
+        "Hindi": "🤖 जेमिनी-संचालित भविष्यवाणी",
+        "Marathi": "🤖 जेमिनी-चालित अंदाज",
+        "Telugu": "🤖 జెమిని-ఆధారిత అంచనా",
+        "Tamil": "🤖 ஜெமினி-இயங்கும் கணிப்பு"
     }
 }
 
-def _(text_key):
-    """Translates a text key to the selected language."""
+
+def _(text_key, **kwargs):
+    """Translates a text key to the selected language, with formatting."""
     lang = st.session_state.get('language', 'English')
-    return TRANSLATIONS.get(text_key, {}).get(lang, text_key)
+    text = TRANSLATIONS.get(text_key, {}).get(lang, text_key)
+    if kwargs:
+        text = text.format(**kwargs)
+    return text
 
-
-# --- Enhanced Custom CSS with Beautiful Farmer-Friendly Design ---
+# --- Enhanced Custom CSS with a Dark, Modern Theme ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
     
-    /* Root variables with pastel yellow and green themes */
+    /* Root variables with deep green and gold theme */
     :root {
-        --primary-green: #98FB98; /* Pastel green */
-        --secondary-green: #90EE90; /* Light green */
-        --accent-yellow: #FDFD96; /* Pastel yellow */
-        --secondary-yellow: #FFFACD; /* Lemon chiffon */
-        --dark-green: #228B22; /* Forest green for accents */
-        --light-green: #E0FFE0; /* Very light green */
+        --primary-green: #006400; /* Dark Green */
+        --secondary-green: #228B22; /* Forest Green */
+        --accent-gold: #FFD700; /* Gold */
+        --dark-bg: #0A190A; /* Very Dark Green/Black */
+        --light-text: #E0E0E0; /* Light Gray for readability */
+        --card-bg: rgba(0, 0, 0, 0.2);
         --success-color: #32CD32;
         --warning-color: #FFD700;
         --error-color: #FF6347;
         --info-color: #87CEEB;
         --white: #FFFFFF;
-        --light-gray: #F5F5F5;
-        --medium-gray: #808080;
+        --light-gray: #D3D3D3;
+        --medium-gray: #A9A9A9;
         --dark-gray: #333333;
         --earth-brown: #DEB887;
-        --text-color: #333333; /* Dark text for readability */
-        --background-light: #FFFACD; /* Pastel yellow background */
+        --text-color: #E0E0E0; /* Light text for readability on dark background */
+        --dark-green: #004D00; /* Even darker green for contrast */
     }
     
     /* Smooth animations */
@@ -640,7 +746,7 @@ st.markdown("""
             transform: scale(1);
         }
         50% {
-            transform: scale(1.05);
+            transform: scale(1.02);
         }
     }
     
@@ -653,13 +759,14 @@ st.markdown("""
         }
     }
     
-    /* Beautiful pastel gradient background */
+    /* Stunning deep green gradient background */
     .stApp {
-        background: linear-gradient(135deg, var(--secondary-yellow), var(--accent-yellow), var(--light-green), var(--primary-green));
+        background: linear-gradient(135deg, var(--dark-bg), var(--primary-green));
         background-size: 400% 400%;
         animation: gradientShift 20s ease infinite;
         font-family: 'Inter', sans-serif;
         min-height: 100vh;
+        color: var(--text-color);
     }
     
     @keyframes gradientShift {
@@ -674,12 +781,12 @@ st.markdown("""
         }
     }
     
-    /* Enhanced text visibility - dark text for light background */
+    /* Enhanced text visibility - light text for dark background */
     h1, h2, h3, h4, h5, h6 {
-        color: var(--dark-green) !important;
+        color: var(--accent-gold) !important;
         font-family: 'Poppins', sans-serif;
         font-weight: 600;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         margin-bottom: 1rem;
     }
     
@@ -687,29 +794,34 @@ st.markdown("""
         color: var(--text-color) !important;
         font-weight: 400;
     }
+
+    .stMarkdown p {
+        color: var(--light-text) !important;
+    }
     
     /* Beautiful cards with subtle shadow and rounded corners */
     .card {
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(0, 0, 0, 0.2);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(144, 238, 144, 0.3); /* Light green border */
-        padding: 2rem;
+        border: 1px solid rgba(255, 215, 0, 0.3); /* Gold border */
+        padding: 2.5rem;
         border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0, 128, 0, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         margin-bottom: 2rem;
         animation: slideInUp 0.6s ease;
         transition: all 0.3s ease;
+        color: var(--text-color);
     }
     
     .card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(0, 128, 0, 0.15);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     }
     
     /* Farmer-friendly button styling */
     .stButton button {
         padding: 1rem 2.5rem;
-        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+        background: linear-gradient(135deg, var(--secondary-green), var(--primary-green));
         color: var(--white);
         border: none;
         border-radius: 25px;
@@ -720,13 +832,13 @@ st.markdown("""
         width: 100%;
         text-transform: none;
         letter-spacing: 0.5px;
-        box-shadow: 0 4px 15px rgba(0, 128, 0, 0.2);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
     
     .stButton button:hover:not(:disabled) {
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0, 128, 0, 0.3);
-        background: linear-gradient(135deg, var(--secondary-green), var(--primary-green));
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
     }
     
     .stButton button:active {
@@ -741,71 +853,71 @@ st.markdown("""
     
     /* Enhanced file uploader */
     .stFileUploader {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
         border-radius: 15px;
         padding: 2rem;
-        border: 2px dashed var(--light-green);
+        border: 2px dashed var(--secondary-green);
         transition: all 0.3s ease;
         text-align: center;
     }
     
     .stFileUploader:hover {
-        border: 2px dashed var(--accent-yellow);
-        background: rgba(255, 253, 150, 0.3);
+        border: 2px dashed var(--accent-gold);
+        background: rgba(255, 215, 0, 0.1);
         transform: scale(1.01);
     }
     
     /* Enhanced tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0.5rem;
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 25px;
         padding: 0.5rem;
         backdrop-filter: blur(10px);
     }
     
     .stTabs [data-baseweb="tab"] {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.2);
         border-radius: 20px;
         padding: 0.8rem 1.5rem;
         font-weight: 500;
-        color: var(--dark-green);
+        color: var(--light-text);
         transition: all 0.3s ease;
-        border: 1px solid rgba(144, 238, 144, 0.3);
+        border: 1px solid rgba(255, 215, 0, 0.3);
         font-size: 0.95rem;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background: var(--light-green);
+        background: var(--dark-green);
         transform: translateY(-2px);
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+        background: linear-gradient(135deg, var(--secondary-green), var(--primary-green));
         color: var(--white);
-        box-shadow: 0 4px 15px rgba(0, 128, 0, 0.2);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         transform: translateY(-2px);
     }
     
     /* Beautiful header */
     .app-header {
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(0, 0, 0, 0.2);
         backdrop-filter: blur(20px);
-        border: 1px solid rgba(144, 238, 144, 0.3);
+        border: 1px solid rgba(255, 215, 0, 0.3);
         padding: 2.5rem 2rem;
         border-radius: 25px;
-        color: var(--dark-green);
-        box-shadow: 0 4px 20px rgba(0, 128, 0, 0.1);
+        color: var(--text-color);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         margin-bottom: 2rem;
         animation: slideInUp 0.8s ease;
         text-align: center;
     }
     
     .app-header h1 {
-        font-size: 3rem;
+        font-size: 3.5rem;
         margin-bottom: 0.5rem;
-        background: linear-gradient(45deg, var(--dark-green), var(--primary-green));
+        background: linear-gradient(45deg, var(--accent-gold), var(--light-text));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -823,30 +935,30 @@ st.markdown("""
     .image-preview {
         border-radius: 15px;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0, 128, 0, 0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
         animation: fadeIn 0.6s ease;
     }
     
     .image-preview:hover {
         transform: scale(1.02);
-        box-shadow: 0 8px 25px rgba(0, 128, 0, 0.15);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
     
     /* Progress bar enhancement */
     .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, var(--primary-green), var(--accent-yellow));
+        background: linear-gradient(90deg, var(--accent-gold), var(--primary-green));
         border-radius: 10px;
     }
     
     .stProgress > div > div > div {
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
     }
     
     /* Radio button styling */
     .stRadio > div {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 15px;
         padding: 1rem;
         backdrop-filter: blur(10px);
@@ -854,7 +966,7 @@ st.markdown("""
     
     /* Checkbox styling */
     .stCheckbox > div {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
         padding: 0.5rem;
         backdrop-filter: blur(5px);
@@ -864,31 +976,32 @@ st.markdown("""
     .stSuccess, .stInfo, .stWarning, .stError {
         border-radius: 15px;
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(144, 238, 144, 0.3);
+        border: 1px solid rgba(255, 215, 0, 0.3);
         animation: slideInUp 0.4s ease;
     }
     
     /* Metric styling */
     .metric-container {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 1.5rem;
         text-align: center;
         transition: all 0.3s ease;
-        border: 1px solid rgba(144, 238, 144, 0.3);
+        border: 1px solid rgba(255, 215, 0, 0.3);
         height: 100%;
     }
     
     .metric-container:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0, 128, 0, 0.1);
-        background: var(--light-green);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        background: var(--dark-green);
     }
     
     .metric-container h3 {
         font-size: 2.2rem;
         margin-bottom: 0.25rem;
+        color: var(--accent-gold) !important;
     }
     
     /* Market Price Card Styling */
@@ -897,31 +1010,32 @@ st.markdown("""
     }
 
     .market-card {
-        background: rgba(255, 255, 255, 0.85);
+        background: rgba(0, 0, 0, 0.2);
         border-radius: 15px;
         padding: 1.5rem;
         margin-bottom: 1rem;
-        border-left: 5px solid var(--primary-green);
+        border-left: 5px solid var(--accent-gold);
         transition: all 0.3s ease-in-out;
-        box-shadow: 0 2px 10px rgba(0, 128, 0, 0.05);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
     
     .market-card:hover {
         transform: translateX(5px) scale(1.01);
-        box-shadow: 0 8px 25px rgba(0, 128, 0, 0.1);
-        border-left-color: var(--accent-yellow);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        border-left-color: var(--secondary-green);
     }
 
     .market-card h4 {
         margin-top: 0;
         margin-bottom: 0.5rem;
-        color: var(--dark-green);
+        color: var(--accent-gold) !important;
         font-weight: 600;
     }
 
     .market-card p {
         margin-bottom: 0.25rem;
         font-size: 0.95rem;
+        color: var(--light-text) !important;
     }
     
     .price-details {
@@ -930,22 +1044,22 @@ st.markdown("""
         align-items: center;
         margin-top: 1rem;
         padding-top: 1rem;
-        border-top: 1px solid var(--light-green);
+        border-top: 1px solid rgba(255, 215, 0, 0.2);
     }
 
     .price-tag {
-        background: var(--light-green);
+        background: var(--secondary-green);
         padding: 0.5rem 1rem;
         border-radius: 10px;
         font-weight: 600;
         text-align: center;
         font-size: 1.1rem;
-        color: var(--dark-green);
+        color: var(--white) !important;
     }
 
     /* Loading animation */
     .loading-text {
-        background: linear-gradient(45deg, var(--primary-green), var(--accent-yellow));
+        background: linear-gradient(45deg, var(--accent-gold), var(--primary-green));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -959,17 +1073,17 @@ st.markdown("""
     }
     
     ::-webkit-scrollbar-track {
-        background: var(--light-gray);
+        background: rgba(0, 0, 0, 0.2);
         border-radius: 10px;
     }
     
     ::-webkit-scrollbar-thumb {
-        background: linear-gradient(45deg, var(--primary-green), var(--secondary-green));
+        background: linear-gradient(45deg, var(--secondary-green), var(--primary-green));
         border-radius: 10px;
     }
     
     ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(45deg, var(--secondary-green), var(--primary-green));
+        background: linear-gradient(45deg, var(--primary-green), var(--secondary-green));
     }
     
     /* Responsive design */
@@ -990,19 +1104,19 @@ st.markdown("""
     
     /* Expander styling */
     .streamlit-expanderHeader {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(144, 238, 144, 0.3);
+        border: 1px solid rgba(255, 215, 0, 0.3);
     }
     
     /* Enhanced empty state styling */
     .empty-state {
         text-align: center;
         padding: 3rem;
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 20px;
-        border: 2px dashed rgba(144, 238, 144, 0.3);
+        border: 2px dashed rgba(255, 215, 0, 0.3);
         animation: fadeIn 0.6s ease;
     }
     
@@ -1011,15 +1125,27 @@ st.markdown("""
         margin-bottom: 1.5rem;
         opacity: 0.8;
     }
+
+    .language-dropdown {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        width: 150px;
+        z-index: 10;
+    }
 </style>
 """, unsafe_allow_html=True)
 
+
 # --- Functions for Backend Logic ---
 
-def get_gemini_content(prompt_input, img_data):
-    """Generates a response from the Gemini Vision model."""
+def get_gemini_content(prompt_input, img_data=None):
+    """Generates a response from the Gemini model."""
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    response = model.generate_content([img_data, prompt_input])
+    if img_data:
+        response = model.generate_content([img_data, prompt_input])
+    else:
+        response = model.generate_content(prompt_input)
     return response.text
 
 def input_img_bytes(uploaded_file):
@@ -1052,6 +1178,11 @@ def get_mandi_prices(crop_name):
         'mustard': 'Mustard',
         'chili': 'Chili Red',
         'turmeric': 'Turmeric',
+        'onion': 'Onion',
+        'gram': 'Gram',
+        'bajra': 'Bajra',
+        'jowar': 'Jowar(Hybrid)',
+        'moong': 'Moong(Green Gram)',
     }
     
     # Try different variations of the crop name
@@ -1087,15 +1218,10 @@ def get_mandi_prices(crop_name):
                     "limit": 15,
                 }
                 
-                # Add debugging info
-                st.write(f"Trying API call with crop name: {crop_variant}")
-                
                 response = requests.get(endpoint['url'], params=params, timeout=10)
                 response.raise_for_status()
                 
                 data = response.json()
-                st.write(f"API Response status: {response.status_code}")
-                st.write(f"Records found: {len(data.get('records', []))}")
                 
                 if data.get("records") and len(data["records"]) > 0:
                     return data
@@ -1175,7 +1301,7 @@ def translate_text(text, target_language):
 def translate_ui_elements(target_language):
     """Translates UI elements using Gemini API for better accuracy."""
     if target_language == "English":
-        return
+        return {}
     
     # Create a comprehensive prompt for UI translation
     ui_elements = {
@@ -1215,7 +1341,7 @@ def create_price_chart(price_data):
         go.Bar(
             x=markets,
             y=prices,
-            marker_color=['#98FB98', '#90EE90', '#E0FFE0', '#FFFACD', '#FDFD96'] * 2,
+            marker_color=['#FFD700', '#228B22', '#006400', '#32CD32', '#F0E68C'] * 2,
             hovertemplate=f'<b>%{{x}}</b><br>{_("modal_price")}: ₹%{{y}}/{ui_translations.get("Quintal", "Quintal")}<extra></extra>',
             text=[f'₹{price}' for price in prices],
             textposition='auto',
@@ -1229,13 +1355,13 @@ def create_price_chart(price_data):
         title={
             'text': _("price_chart_title"),
             'x': 0.5,
-            'font': {'size': 20, 'color': '#228B22'}
+            'font': {'size': 20, 'color': '#FFD700'} # Gold color
         },
         xaxis_title=market_label,
         yaxis_title=price_label,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#228B22'),
+        font=dict(color='#E0E0E0'), # Light gray text
         xaxis=dict(tickangle=45),
         showlegend=False,
         height=500
@@ -1243,6 +1369,177 @@ def create_price_chart(price_data):
     
     return fig
 
+# --- FIXED: Function to get weather data from OpenWeatherMap API ---
+def get_weather_data(latitude, longitude):
+    """Fetches current weather data from OpenWeatherMap API."""
+    # Add validation to prevent requests with None coordinates
+    if latitude is None or longitude is None:
+        st.error("Location coordinates are missing. Cannot fetch weather data.")
+        return None
+
+    if not OPENWEATHERMAP_API_KEY:
+        st.error("OpenWeatherMap API key not found. Please set `OPENWEATHERMAP_API_KEY` in your .env file.")
+        return None
+    
+    url = "https://api.openweathermap.org/data/2.5/weather"
+    
+    params = {
+        'lat': latitude,
+        'lon': longitude,
+        'appid': OPENWEATHERMAP_API_KEY,
+        'units': 'metric'
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching weather data: {e}")
+        return None
+
+# --- NEW: Gemini-powered predictive alert function ---
+def get_gemini_disease_prediction(crop, disease, weather, location):
+    """
+    Generates a predictive disease alert using Gemini based on weather data.
+    """
+    if not weather:
+        return "Weather data is unavailable for prediction."
+
+    weather_summary = (
+        f"Temperature: {weather['main']['temp']}°C, "
+        f"Humidity: {weather['main']['humidity']}%, "
+        f"Condition: {weather['weather'][0]['description']}"
+    )
+
+    prompt = f"""
+    As an expert agricultural AI, analyze the following situation and provide a predictive alert for a farmer.
+
+    **Situation:**
+    - **Crop:** {crop}
+    - **Previously Detected Disease:** {disease}
+    - **Current Location:** {location}
+    - **Current Weather:** {weather_summary}
+
+    **Task:**
+    1.  Based on the current weather, predict the risk of the detected disease spreading or worsening in the next 48 hours.
+    2.  Assign a clear risk level: **Low**, **Medium**, or **High**.
+    3.  If the risk is **Medium** or **High**, provide 3-4 concise, actionable, and urgent preventative measures the farmer should take immediately.
+    4.  If the risk is **Low**, state that conditions are not favorable for the disease and recommend continued monitoring.
+
+    **Output Format (Strict):**
+    Use markdown. Start with the risk level on its own line, followed by a short explanation. Then, if applicable, provide the urgent actions under a "### Urgent Actions" heading.
+
+    **Example for High Risk:**
+    ###  High Risk 🌡️
+    The current warm and highly humid conditions are ideal for the rapid spread of {disease}.
+
+    ### Urgent Actions
+    - **Action 1:** Detailed, specific action.
+    - **Action 2:** Detailed, specific action.
+    - **Action 3:** Detailed, specific action.
+
+    **Example for Low Risk:**
+    ### Low Risk ✅
+    The current weather conditions are not favorable for the spread of {disease}. Continue to monitor your crops daily.
+    """
+    
+    prediction = get_gemini_content(prompt)
+    return prediction
+
+
+def find_nearest_mandis(latitude, longitude):
+    """Finds nearest mandis using Google Places API - Nearby Search."""
+    if not GOOGLE_MAPS_API_KEY:
+        st.warning(_("api_key_error"))
+        return None
+        
+    url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    
+    params = {
+        'location': f"{latitude},{longitude}",
+        'radius': 50000,  # 50km in meters, max radius for Nearby Search is 50,000m
+        'keyword': 'agricultural market OR mandi',
+        'key': GOOGLE_MAPS_API_KEY
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Check for specific API errors
+        if data.get('status') == 'REQUEST_DENIED':
+            st.error(f"Google Places API Error: {data.get('error_message', 'Request Denied. Please check your API key and billing settings in Google Cloud Console.')}")
+            return None
+        
+        if data.get('status') == 'OK' and data.get('results'):
+            mandis = []
+            for place in data['results']:
+                mandis.append({
+                    'name': place.get('name', 'Unknown Mandi'),
+                    'lat': place['geometry']['location']['lat'],
+                    'lon': place['geometry']['location']['lng']
+                })
+            return mandis
+        else:
+            # Provide more specific feedback if no results are found
+            st.warning(f"Google Places API response status: {data.get('status')}. This might mean no mandis were found within the search radius.")
+            return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching mandis from Google Places API: {e}")
+        return None
+
+# --- Function to generate the HTML map component ---
+def generate_google_map_html(center_lat, center_lon, markers):
+    markers_json = json.dumps(markers)
+    # The HTML code is a single string that's passed to Streamlit's components.html
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Google Map</title>
+        <style>
+            #map {{
+                height: 500px;
+                width: 100%;
+            }}
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <script>
+            function initMap() {{
+                const center = {{ lat: {center_lat}, lng: {center_lon} }};
+                const map = new google.maps.Map(document.getElementById("map"), {{
+                    zoom: 10,
+                    center: center,
+                }});
+                
+                // Add center marker
+                new google.maps.Marker({{
+                    position: center,
+                    map: map,
+                    title: "Your Location",
+                    icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                }});
+                
+                const markers = {markers_json};
+                
+                markers.forEach(mandi => {{
+                    const marker = new google.maps.Marker({{
+                        position: {{ lat: mandi.lat, lng: mandi.lng }},
+                        map: map,
+                        title: mandi.name
+                    }});
+                }});
+            }}
+        </script>
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&callback=initMap"></script>
+    </body>
+    </html>
+    """
+    
 # --- Initialize Session State ---
 if 'gemini_response_json' not in st.session_state:
     st.session_state.gemini_response_json = None
@@ -1266,23 +1563,72 @@ if 'active_tab' not in st.session_state:
     st.session_state.active_tab = 0
 if 'auto_redirect' not in st.session_state:
     st.session_state.auto_redirect = False
+if 'user_lat' not in st.session_state:
+    st.session_state.user_lat = 19.0760 # Default to Mumbai
+if 'user_lon' not in st.session_state:
+    st.session_state.user_lon = 72.8777 # Default to Mumbai
+if 'location_set' not in st.session_state:
+    st.session_state.location_set = False
+
 
 # --- UI Layout ---
 
-# Beautiful header
-st.markdown(f"""
-<div class="app-header">
-    <h1>🌱 {_("app_name")}</h1>
-    <p>{_("app_slogan_1")}</p>
-    <p style="font-size: 1rem; opacity: 0.8;">{_("app_slogan_2")}</p>
-</div>
-""", unsafe_allow_html=True)
+# Automatic geolocation pop-up on first load
+if not st.session_state.location_set:
+    st.markdown("<div style='display:none'>", unsafe_allow_html=True)
+    user_location = streamlit_geolocation()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if user_location and user_location.get('latitude') is not None:
+        st.session_state.user_lat = user_location['latitude']
+        st.session_state.user_lon = user_location['longitude']
+        st.session_state.location_set = True
+        st.rerun()
+
+# Header with a dedicated column for language selection
+header_col1, header_col2 = st.columns([0.8, 0.2])
+
+with header_col1:
+    st.markdown(f"""
+    <div class="app-header">
+        <h1>🌱 {_("app_name")}</h1>
+        <p>{_("app_slogan_1")}</p>
+        <p style="font-size: 1rem; opacity: 0.8;">{_("app_slogan_2")}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with header_col2:
+    st.markdown("<div class='language-dropdown'>", unsafe_allow_html=True)
+    st.markdown(f"**🌐 {_('select_language')}**")
+    lang_options = {
+        "English": "🇺🇸 English",
+        "Hindi": "🇮🇳 हिंदी",
+        "Marathi": "🇮🇳 मराठी",
+        "Telugu": "🇮🇳 తెలుగు",
+        "Tamil": "🇮🇳 தமிழ்"
+    }
+    selected_lang = st.selectbox(
+        "Select Language",
+        options=list(lang_options.keys()),
+        index=list(lang_options.keys()).index(st.session_state.language),
+        format_func=lambda x: lang_options[x],
+        label_visibility="collapsed"
+    )
+
+    if st.session_state.language != selected_lang:
+        st.session_state.language = selected_lang
+        st.session_state.translated_response = None
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 # Enhanced tabs with automatic redirection
 tab_names = [
     f"📤 {_('tab_upload')}",
     f"🔍 {_('tab_results')}",
-    f"📊 {_('tab_prices')}"
+    f"📊 {_('tab_prices')}",
+    f"📍 {_('tab_mandi')}",
+    f"🚨 {_('tab_alerts')}"
 ]
 
 # Handle auto-redirect to results tab
@@ -1299,31 +1645,6 @@ with tabs[0]:
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        # Language selection
-        st.markdown(f"### 🌐 {_('select_language')}")
-        lang_options = {
-            "English": "🇺🇸 English", 
-            "Hindi": "🇮🇳 हिंदी", 
-            "Marathi": "🇮🇳 मराठी",
-            "Telugu": "🇮🇳 తెలుగు",
-            "Tamil": "🇮🇳 தமிழ்"
-        }
-        
-        selected_lang = st.radio(
-            "Select your language:",
-            options=list(lang_options.keys()),
-            format_func=lambda x: lang_options[x],
-            horizontal=True,
-            key="language_selector",
-            label_visibility="collapsed"
-        )
-        
-        # Update language and reset translations when changed
-        if st.session_state.language != selected_lang:
-            st.session_state.language = selected_lang
-            st.session_state.translated_response = None
-            st.rerun()
-        
         st.markdown(f"### 📸 {_('upload_image')}")
         
         # Enhanced file uploader
@@ -1381,7 +1702,7 @@ with tabs[0]:
             
             # Image info with beautiful styling
             img_info = f"""
-            <div style="background: rgba(255, 255, 255, 0.9); padding: 1.5rem; border-radius: 15px; margin-top: 1rem; backdrop-filter: blur(10px);">
+            <div style="background: rgba(0, 0, 0, 0.3); padding: 1.5rem; border-radius: 15px; margin-top: 1rem; backdrop-filter: blur(10px); color: var(--text-color);">
                 <p><strong>📏 {_("image_info_dim")}</strong> {st.session_state.uploaded_image.size[0]} x {st.session_state.uploaded_image.size[1]}</p>
                 <p><strong>📁 {_("image_info_format")}</strong> {st.session_state.uploaded_image.format}</p>
                 <p><strong>📊 {_("image_info_size")}</strong> {len(uploaded_file.getvalue()) / 1024:.1f} KB</p>
@@ -1427,35 +1748,19 @@ with tabs[0]:
         Structure your response with clear headings and include:
         
         # 🌾 Crop Identification
-        - Crop name and variety
-        - Growth stage assessment
+        - **Crop name:** [Your Answer]
         
         # 🔍 Health Assessment  
-        - Overall plant condition
-        - Visible symptoms or abnormalities
+        - **Overall condition:** [Your Answer]
         
         # 🦠 Disease/Pest Detection
-        - Any diseases, pests, or nutrient deficiencies identified
-        - Severity level and affected areas
+        - **Detected issue:** [Name of disease/pest, or "None"]
         
         # 💊 Treatment Recommendations
-        - Specific treatment steps
-        - Recommended products or methods
-        - Application timing and dosage
+        - [Your recommendations]
         
         # 🛡️ Prevention Tips
-        - How to prevent future occurrences
-        - Best practices for crop health
-        
-        # 🌱 Growing Conditions
-        - Optimal environmental requirements
-        - Soil and water management tips
-        
-        # 📅 Harvest Information
-        - Expected harvest timeline
-        - Quality indicators to watch for
-        
-        Use emojis and bullet points for better readability. Be specific and practical in recommendations.
+        - [Your tips]
         """
         
         try:
@@ -1475,13 +1780,12 @@ with tabs[0]:
             
             st.success(_("success_message"))
             
-            # Set auto-redirect flag and rerun to switch to results tab
             st.session_state.auto_redirect = True
             time.sleep(2)
             st.rerun()
 
         except Exception as e:
-            status_text.markdown(f'<p style="color: #ff6b6b;">❌ {_("analysis_failed").format(error=str(e))}</p>', 
+            status_text.markdown(f'<p style="color: #ff6b6b;">❌ {_("analysis_failed", error=str(e))}</p>', 
                                  unsafe_allow_html=True)
             st.session_state.is_analyzing = False
     
@@ -1491,16 +1795,14 @@ with tabs[1]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     
     if st.session_state.gemini_response:
-        # Handle translation for non-English languages
         if st.session_state.language != "English":
-            if not st.session_state.translated_response or st.session_state.is_translating:
-                with st.spinner(f"🌐 {_('translating_text').format(language=st.session_state.language)}"):
+            if not st.session_state.translated_response:
+                with st.spinner(f"🌐 {_('translating_text', language=st.session_state.language)}"):
                     try:
                         st.session_state.translated_response = translate_text(
                             st.session_state.gemini_response, 
                             st.session_state.language
                         )
-                        st.session_state.is_translating = False
                     except Exception as e:
                         st.error(f"Translation failed: {str(e)}")
                         st.session_state.translated_response = st.session_state.gemini_response
@@ -1510,49 +1812,24 @@ with tabs[1]:
         st.markdown(f"### 📋 {_('analysis_results_title')}")
         st.markdown(st.session_state.translated_response, unsafe_allow_html=True)
         
-        # Quick Actions
         st.markdown(f"### ⚡ {_('quick_actions')}")
         col_action1, col_action2, col_action3 = st.columns(3)
         
         with col_action1:
-            if st.button(
-                f"📥 {_('download_report')}",
-                help=_("download_help"),
-                use_container_width=True
-            ):
-                # Simulate report generation
+            if st.button(f"📥 {_('download_report')}", help=_("download_help"), use_container_width=True):
                 report_content = st.session_state.translated_response
-                st.download_button(
-                    label="Download PDF",
-                    data=report_content.encode('utf-8'),
-                    file_name="crop_analysis_report.pdf",
-                    mime="application/pdf",
-                    help=_("download_help")
-                )
+                st.download_button("Download PDF", report_content.encode('utf-8'), "crop_analysis_report.pdf", "application/pdf")
                 st.success(_("download_success"))
         
         with col_action2:
-            if st.button(
-                f"🔄 {_('re_analyze')}",
-                help=_("re_analyze_help"),
-                use_container_width=True
-            ):
+            if st.button(f"🔄 {_('re_analyze')}", help=_("re_analyze_help"), use_container_width=True):
                 st.session_state.is_analyzing = True
                 st.session_state.active_tab = 0
                 st.rerun()
         
         with col_action3:
-            if st.button(
-                f"💾 {_('save_to_history')}",
-                help="Save analysis to history",
-                use_container_width=True
-            ):
-                # Simulate saving to history
-                st.session_state.history = st.session_state.get('history', []) + [{
-                    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'image': st.session_state.uploaded_image,
-                    'analysis': st.session_state.translated_response
-                }]
+            if st.button(f"💾 {_('save_to_history')}", help="Save analysis to history", use_container_width=True):
+                st.session_state.history = st.session_state.get('history', []) + [{'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'image': st.session_state.uploaded_image, 'analysis': st.session_state.translated_response}]
                 st.success(_("save_success"))
     
     else:
@@ -1571,122 +1848,135 @@ with tabs[2]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     
     if st.session_state.gemini_response:
-        # Extract crop name from analysis
         try:
-            # Simple regex to find crop name (assumes it's mentioned in the analysis)
-            import re
-            crop_match = re.search(r'Crop name.*?([A-Za-z\s]+)', st.session_state.gemini_response, re.IGNORECASE)
+            crop_match = re.search(r'Crop name:\s*(.*)', st.session_state.gemini_response, re.IGNORECASE)
             crop_name = crop_match.group(1).strip() if crop_match else "Unknown Crop"
         except:
             crop_name = "Unknown Crop"
         
         st.markdown(f"### 📈 {_('market_prices_title')}")
-        st.markdown(f"**{_('market_data_for').format(crop=crop_name)}**")
+        st.markdown(f"**{_('market_data_for', crop=crop_name)}**")
         
-        # Fetch market prices
         if not st.session_state.mandi_prices:
             with st.spinner(f"⏳ {_('fetching_prices')}"):
                 try:
                     st.session_state.mandi_prices = get_mandi_prices(crop_name)
                 except Exception as e:
-                    st.error(_("error_fetching_market_data").format(error=str(e)))
+                    st.error(_("error_fetching_market_data", error=str(e)))
                     st.session_state.mandi_prices = None
         
         if st.session_state.mandi_prices and st.session_state.mandi_prices.get('records'):
             records = st.session_state.mandi_prices['records']
             
-            # Calculate average price
             prices = [float(record.get('modal_price', 0)) for record in records if record.get('modal_price')]
             avg_price = sum(prices) / len(prices) if prices else 0
             high_price = max(prices) if prices else 0
             low_price = min(prices) if prices else 0
             
-            # Display metrics
             st.markdown(f"### 📊 {_('market_overview')}")
             col_metric1, col_metric2, col_metric3 = st.columns(3)
             
             with col_metric1:
-                st.markdown(f"""
-                <div class="metric-container">
-                    <p style="font-size: 1.1rem; color: var(--dark-green);">📉 {_('min_price')}</p>
-                    <h3 style="color: var(--error-color);">₹{low_price:.2f}</h3>
-                    <p style="opacity: 0.7;">{_('avg_price_help')}</p>
-                </div>
-                """, unsafe_allow_html=True)
-
+                st.markdown(f"""<div class="metric-container"><p style="font-size: 1.1rem; color: var(--text-color);">📉 {_('min_price')}</p><h3 style="color: var(--error-color);">₹{low_price:.2f}</h3><p style="opacity: 0.7; color: var(--light-text);">{_('avg_price_help')}</p></div>""", unsafe_allow_html=True)
             with col_metric2:
-                st.markdown(f"""
-                <div class="metric-container">
-                    <p style="font-size: 1.1rem; color: var(--dark-green);">{_('avg_price')}</p>
-                    <h3 style="color: var(--warning-color);">₹{avg_price:.2f}</h3>
-                    <p style="opacity: 0.7;">{_('avg_price_help')}</p>
-                </div>
-                """, unsafe_allow_html=True)
-
+                st.markdown(f"""<div class="metric-container"><p style="font-size: 1.1rem; color: var(--text-color);">{_('avg_price')}</p><h3 style="color: var(--warning-color);">₹{avg_price:.2f}</h3><p style="opacity: 0.7; color: var(--light-text);">{_('avg_price_help')}</p></div>""", unsafe_allow_html=True)
             with col_metric3:
-                st.markdown(f"""
-                <div class="metric-container">
-                    <p style="font-size: 1.1rem; color: var(--dark-green);">📈 {_('max_price')}</p>
-                    <h3 style="color: var(--success-color);">₹{high_price:.2f}</h3>
-                    <p style="opacity: 0.7;">{_('avg_price_help')}</p>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"""<div class="metric-container"><p style="font-size: 1.1rem; color: var(--text-color);">📈 {_('max_price')}</p><h3 style="color: var(--success-color);">₹{high_price:.2f}</h3><p style="opacity: 0.7; color: var(--light-text);">{_('avg_price_help')}</p></div>""", unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # Price chart
             price_chart = create_price_chart(st.session_state.mandi_prices)
             if price_chart:
                 st.plotly_chart(price_chart, use_container_width=True)
             
-            # Detailed market information
             st.markdown(f"### 📋 {_('market_info_title')}")
             
             st.markdown('<div class="market-list-container">', unsafe_allow_html=True)
-            for record in records[:5]:  # Show top 5 markets
-                st.markdown(f"""
-                <div class="market-card">
-                    <h4>{record.get('market', 'Unknown')} - <span style="font-weight: 400; opacity: 0.8;">{record.get('state', 'N/A')}</span></h4>
-                    <p><strong>{_('commodity')}:</strong> {record.get('commodity', 'N/A')} ({record.get('variety', 'N/A')})</p>
-                    <div class="price-details">
-                        <div>
-                            <p><strong>{_('min_price')}:</strong> ₹{record.get('min_price', 'N/A')}</p>
-                            <p><strong>{_('max_price')}:</strong> ₹{record.get('max_price', 'N/A')}</p>
-                        </div>
-                        <div class="price-tag">
-                            {_('modal_price')}<br>₹{record.get('modal_price', 'N/A')}
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+            for record in records[:5]:
+                st.markdown(f"""<div class="market-card"><h4>{record.get('market', 'Unknown')} - <span style="font-weight: 400; opacity: 0.8; color: var(--light-text) !important;">{record.get('state', 'N/A')}</span></h4><p><strong>{_('commodity')}:</strong> {record.get('commodity', 'N/A')} ({record.get('variety', 'N/A')})</p><div class="price-details"><div><p><strong>{_('min_price')}:</strong> ₹{record.get('min_price', 'N/A')}</p><p><strong>{_('max_price')}:</strong> ₹{record.get('max_price', 'N/A')}</p></div><div class="price-tag">{_('modal_price')}<br>₹{record.get('modal_price', 'N/A')}</div></div></div>""", unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
         else:
-            st.markdown(f"""
-            <div class="empty-state">
-                <div class="empty-state-icon">📉</div>
-                <h3>{_('no_market_data').format(crop_name=crop_name)}</h3>
-                <p>{_('api_unavailable_1')}</p>
-                <p style="opacity: 0.7;">{_('api_unavailable_2')}</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"""<div class="empty-state"><div class="empty-state-icon">📉</div><h3>{_('no_market_data', crop_name=crop_name)}</h3><p>{_('api_unavailable_1')}</p><p style="opacity: 0.7;">{_('api_unavailable_2')}</p></div>""", unsafe_allow_html=True)
     
     else:
-        st.markdown(f"""
-        <div class="empty-state">
-            <div class="empty-state-icon">📊</div>
-            <h3>{_('prices_awaiting_analysis_title')}</h3>
-            <p>{_('prices_awaiting_analysis_text_1')}</p>
-            <p style="opacity: 0.7;">{_('prices_awaiting_analysis_text_2')}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="empty-state"><div class="empty-state-icon">📊</div><h3>{_('prices_awaiting_analysis_title')}</h3><p>{_('prices_awaiting_analysis_text_1')}</p><p style="opacity: 0.7;">{_('prices_awaiting_analysis_text_2')}</p></div>""", unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
+
+with tabs[3]:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown(f"### 📍 {_('tab_mandi')}")
+
+    with st.spinner(_("searching_mandis")):
+        mandis = find_nearest_mandis(st.session_state.user_lat, st.session_state.user_lon)
+        
+        if mandis:
+            st.success(_("mandis_found", count=len(mandis)))
+            map_markers = [{"lat": m['lat'], "lng": m['lon'], "name": m['name']} for m in mandis]
+            map_html = generate_google_map_html(st.session_state.user_lat, st.session_state.user_lon, map_markers)
+            components.html(map_html, height=500)
+        else:
+            # The function find_nearest_mandis now shows specific errors
+            pass
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with tabs[4]:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown(f"### 🚨 {_('predictive_alerts_title')}")
+
+    if st.session_state.gemini_response:
+        try:
+            crop_match = re.search(r'Crop name:\s*(.*)', st.session_state.gemini_response, re.IGNORECASE)
+            disease_match = re.search(r'Detected issue:\s*(.*)', st.session_state.gemini_response, re.IGNORECASE)
+            
+            crop_name = crop_match.group(1).strip() if crop_match else "Unknown Crop"
+            disease_name = disease_match.group(1).strip() if disease_match else "None"
+
+            st.markdown(f"<p style='text-align: center; color: var(--text-color); opacity: 0.7;'>{_('predictive_alerts_text')}</p>", unsafe_allow_html=True)
+            st.markdown("<hr>", unsafe_allow_html=True)
+            
+            if disease_name.lower() != 'none' and disease_name:
+                weather_data = get_weather_data(st.session_state.user_lat, st.session_state.user_lon)
+                
+                if weather_data:
+                    st.markdown("#### Current Weather Conditions")
+                    col_w1, col_w2, col_w3 = st.columns(3)
+                    with col_w1:
+                        st.metric(label="Temperature", value=f"{weather_data['main']['temp']} °C")
+                    with col_w2:
+                        st.metric(label="Humidity", value=f"{weather_data['main']['humidity']}%")
+                    with col_w3:
+                        st.metric(label="Condition", value=weather_data['weather'][0]['description'].title())
+                    st.markdown("<hr>", unsafe_allow_html=True)
+
+                    with st.spinner(_('generating_prediction', disease_name=disease_name)):
+                        # Using a generic location name for privacy in the prompt
+                        prediction_response = get_gemini_disease_prediction(crop_name, disease_name, weather_data, "the user's region")
+                        
+                        # Translate the prediction if needed
+                        if st.session_state.language != "English":
+                            prediction_response = translate_text(prediction_response, st.session_state.language)
+                        
+                        st.markdown(f"### {_('gemini_prediction_header')}")
+                        st.markdown(prediction_response, unsafe_allow_html=True)
+                else:
+                    st.warning("Could not fetch weather data to run predictive analysis.")
+            else:
+                st.success(_('no_disease_detected'))
+        except Exception as e:
+            st.error(f"An error occurred while generating the prediction: {e}")
+    else:
+        st.info("Please complete crop analysis first to enable predictive alerts.")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
 # Footer
 st.markdown("""
 <div style="text-align: center; padding: 2rem 0; color: var(--text-color); opacity: 0.7;">
-    <p>🌱 {_("app_name")} - Powered by Google Gemini AI</p>
+    <p>🌱 AgroSnap - Powered by Google Gemini AI</p>
     <p>Supporting farmers with real-time crop analysis and market insights</p>
 </div>
 """, unsafe_allow_html=True)
